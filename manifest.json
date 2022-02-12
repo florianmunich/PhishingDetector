@@ -1,0 +1,6 @@
+{
+    "name": "Phishing Detector",
+    "description": "Building an intuitive and efficient Phishing warning system",
+    "version": "0.1.0",
+    "manifest_version": 3
+  }
