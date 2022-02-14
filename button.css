@@ -1,10 +1,10 @@
 button {
     height: 30px;
     width: 30px;
-    outline: none;
+    border-color: #808080;
+    border-width: 1px;
     margin: 10px;
-    border: none;
-    border-radius: 2px;
+    border-radius: 5px;
   }
   
   button.current {
