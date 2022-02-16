@@ -30,6 +30,12 @@ function handleButtonClick(event) {
   chrome.storage.sync.set({ color });
   changeColor();
   
+  // opens a communication between scripts
+  var port = chrome.runtime.connect();
+  port.postMessage({
+    'from': 'popup'
+});
+  
 }
 
 // Add a button to the page for each supplied color
