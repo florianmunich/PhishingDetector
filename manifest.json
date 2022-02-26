@@ -9,8 +9,8 @@
     "content_scripts":[
       {
         "matches": ["<all_urls>"],
-        "js": ["injectTest.js", "require.js"],
-        "css": ["injectTest.css"]
+        "js": ["injectIconToPage.js", "require.js"],
+        "css": ["injectIconToPage.css"]
       }
     ],
     "permissions": ["tabs", "activeTab", "storage", "activeTab", "scripting"],
