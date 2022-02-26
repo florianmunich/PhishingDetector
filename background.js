@@ -1,5 +1,7 @@
 let color = '#3aa757';
 
+var currentWebsite = "";
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({ color });
   //console.log('Default background color set to %cgreen', `color: ${color}`);
@@ -7,7 +9,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 // opens a communication port
-chrome.runtime.onConnect.addListener(function(port) {
+/* chrome.runtime.onConnect.addListener(function(port) {
 
     // listen for every message passing throw it
     port.onMessage.addListener(function(o) {
@@ -16,11 +18,7 @@ chrome.runtime.onConnect.addListener(function(port) {
         if (o.from && o.from === 'popup') {
             if(o.message == "URLrequest"){
                 url = getCurrentPage();
-/*                 var port_out = chrome.runtime.connect();
-                port_out.postMessage({
-                    'from': 'background',
-                    'message' : url
-                }); */
+                sendResponse({urlpage: url});
             }
 
             console.log("Received message");
@@ -35,12 +33,33 @@ chrome.runtime.onConnect.addListener(function(port) {
             //});
         }
     });
-});
+}); */
 
+/* chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
+    if (changeInfo.status == 'complete') {
+  
+        currentWebsite = getCurrentPage();
+  
+    }
+  }); */
 
+var message = "testmessage";
+chrome.runtime.onMessage.addListener(
+    async function(request, sender, sendResponse) {
+      console.log(sender.tab ?
+                  "from a content script:" + sender.tab.url :
+                  "from the extension");
+      if (request.greeting === "hello"){
+        chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+            sendResponse({farewell: message});
+        });
+      }
+    }
+  );
 
-function getCurrentPage(){
+async function getCurrentPage(){
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        currentWebsite = getCurrentPage();
         return tabs[0].url;
     });
 }
