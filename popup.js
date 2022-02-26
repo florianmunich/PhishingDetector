@@ -15,7 +15,9 @@ async function changeColor () {
 // Reacts to a button click by marking the selected button and saving
 // the selection
 function handleButtonClick(event) {
-    console.log(event);
+
+
+  console.log(event);
   // Remove styling from the previously selected color
   let current = event.target.parentElement.querySelector(
     `.${selectedClassName}`
@@ -33,7 +35,8 @@ function handleButtonClick(event) {
   // opens a communication between scripts
   var port = chrome.runtime.connect();
   port.postMessage({
-    'from': 'popup'
+    'from': 'popup',
+    'message' : 'Hello'
 });
   
 }
@@ -73,3 +76,5 @@ chrome.storage.sync.get("color", ({ color }) => {
     document.body.style.backgroundColor = color;
 });
 }
+
+//Haken zum Speichern von sicheren Webseiten

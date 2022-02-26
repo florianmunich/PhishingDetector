@@ -14,8 +14,18 @@ chrome.runtime.onConnect.addListener(function(port) {
 
         // if the message comes from the popup
         if (o.from && o.from === 'popup') {
+            if(o.message == "URLrequest"){
+                url = getCurrentPage();
+/*                 var port_out = chrome.runtime.connect();
+                port_out.postMessage({
+                    'from': 'background',
+                    'message' : url
+                }); */
+            }
 
             console.log("Received message");
+            console.log(o.message);
+            
             // inserts a script into your tab content
             //chrome.tabs.executeScript(null, {
 
@@ -26,3 +36,11 @@ chrome.runtime.onConnect.addListener(function(port) {
         }
     });
 });
+
+
+
+function getCurrentPage(){
+    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        return tabs[0].url;
+    });
+}

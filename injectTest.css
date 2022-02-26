@@ -1,0 +1,9 @@
+.appendedSecurityLogo {
+    float: left;
+    position: relative;
+    display: -webkit-inline-box !important;
+    display: block;
+    width: 50px;
+    right: 0px;
+    margin: 0px 8px;
+}
