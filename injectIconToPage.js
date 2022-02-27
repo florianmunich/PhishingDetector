@@ -9,25 +9,27 @@ var safeSites;
 async function main(){
     await getPhishingData();
     await declareSites();
-    console.log(allKnownSites);
     var currentSite = window.location.toString();
-    inputPDIcon();
-    var phishingSite = await siteInSuspected(currentSite);
-    console.log("PhishingSiteBoolean:" + phishingSite);
-    if(phishingSite){
-        warning();
-    }
-    var safeSite = await siteInSafe(currentSite);
-    console.log("SafeSiteBoolean:" + safeSite);
-    if(safeSite){
-        safe();
-    }
-    if(!safeSite && !phishingSite){
-        unknown();
+    var pwElems = document.querySelectorAll('input[type=password]');
+    if(!pwElems.length == 0){
+        inputPDIcon(pwElems);
+        var phishingSite = await siteInSuspected(currentSite);
+        if(phishingSite){
+            warning();
+        }
+        var safeSite = await siteInSafe(currentSite);
+        if(safeSite){
+            safe();
+        }
+        if(!safeSite && !phishingSite){
+            console.log("Site was not found safe or unsafe");
+            unknown();
+        }
     }
 
 }
 main();
+
 async function getPhishingData() {
     await fetch(url)
     .then(res => res.json())
@@ -41,10 +43,8 @@ async function declareSites(){
     safeSites = allKnownSites.safeSites;
 }
 
-function inputPDIcon() {
-    var elems = document.querySelectorAll('input[type=password]');
-
-    for(let item of elems){
+function inputPDIcon(pwElems) {
+    for(let item of pwElems){
         item.placeholder="Think twice before entering data!";
         //create item svg
         //TODO: Altes Logo von Icons8 --> Erneuern
@@ -65,25 +65,108 @@ function inputPDIcon() {
         newIcon.appendChild(newItemSVG)
         newItemSVG.appendChild(newItemPath);
         item.parentNode.appendChild(newIcon);
+        iconAppended = document.getElementsByClassName('appendedSecurityLogo')[0];
+       
+        console.log('started building container');
+        var container = document.createElement('div');
+        container.setAttribute('class', 'hoverContainer');
+        var hoverContainerBackground = document.createElement('div');
+        hoverContainerBackground.setAttribute('class', 'hoverContainerBackground');
+        container.appendChild(hoverContainerBackground);
+        var siteInfoText = document.createElement('div');
+        siteInfoText.setAttribute('class', 'siteInfoText');
+        siteInfoText.innerHTML = 'We currently do not have information about this page.';
+        var justifyPhish = document.createElement('div');
+        justifyPhish.setAttribute('class', 'justifyPhish');
+        justifyPhish.innerHTML = '';
+        var readMore = document.createElement('div');
+        readMore.setAttribute('class', 'readMore');
+        readMore.innerHTML = 'Read more here: ';
+        var readMorePage = document.createElement('a');
+        readMorePage.setAttribute('href', 'https://www.wildfirecu.org/education-and-resources/blog/blog-post/wildfire-blog/how-to-spot-a-phishing-website');
+        readMorePage.innerHTML = 'How to detect a Phishing Page';
+        readMore.appendChild(readMorePage);
+        hoverContainerBackground.appendChild(siteInfoText);
+        hoverContainerBackground.appendChild(justifyPhish);
+        hoverContainerBackground.appendChild(readMore);
+        iconAppended.parentNode.appendChild(container);
+        console.log('finished building container');
+
+        iconAppended.addEventListener("mouseenter", function(event) {
+            console.log("hover");
+            iconAppended.classList.add('iconHovered');
+            container.classList.add('hoverContainerOnHover');
+        })
     }
 }
 
 function warning(){
     var icon = document.getElementsByClassName("appendedSecurityLogo")[0];
-    icon.setAttribute('id', 'warningSecurityLogo');
-    icon.parentNode.setAttribute('title', 'Message from PD: This website ist probably unsafe! Do NOT enter personal information or BE VERY CAUTOUS!')
+    icon.classList.add('warningSecurityLogo');
+    icon.parentNode.setAttribute('title', 'Message from PD: This website ist probably unsafe! Do NOT enter personal information or BE VERY CAUTOUS!');
+
+    //var siteInfotext = document.getElementsByClassName('siteInfoText')[0];
+
+    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
+    siteInfoText.classList.add('siteInfotextWarning');
+    var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
+    siteInfoText.innerHTML = 'We found that ' + window.location.toString().split('/')[2] + ' is probably unsafe!';
+    justifyPhish.innerHTML = 'Reason: We found the web page in a blacklist of phishing sites!';
 }
 
 function safe(){
     var icon = document.getElementsByClassName("appendedSecurityLogo")[0];
-    icon.setAttribute('id', 'safeSecurityLogo');
+    icon.classList.add('safeSecurityLogo');
     icon.parentNode.setAttribute('title', 'Message from PD: We think this website might be safe! You can enter your data.')
+
+    //Put info text to hover popup
+    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
+    siteInfoText.classList.add('siteInfotextSafe');
+    var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
+    siteInfoText.innerHTML = 'We found that ' + window.location.toString().split('/')[2] + ' is probably safe!';
+    justifyPhish.innerHTML = 'Reason: We found the web page in our database!';
 }
 
 function unknown(){
     var icon = document.getElementsByClassName("appendedSecurityLogo")[0];
-    icon.setAttribute('id', 'unknownSecurityLogo');
+    icon.classList.add('unknownSecurityLogo');
     icon.parentNode.setAttribute('title', 'Message from PD: We do not know this webpage. be careful when entering data.')
+}
+
+function triggerHoverContainer(icon){
+/*     var position = icon.getBoundingClientRect();
+    console.log(position); */
+    console.log('started builing container')
+    
+    var container = document.createElement('div');
+    container.setAttribute('class', 'hoverContainer');
+
+    var hoverContainerBackground = document.createElement('div');
+    hoverContainerBackground.setAttribute('class', 'hoverContainerBackground');
+    container.appendChild(hoverContainerBackground);
+
+    var siteInfoText = document.createElement('div');
+    siteInfoText.setAttribute('class', 'siteInfoText');
+    siteInfoText.innerHTML = 'We currently do not have information about this page.';
+
+    var justifyPhish = document.createElement('div');
+    justifyPhish.setAttribute('class', 'justifyPhish');
+    justifyPhish.innerHTML = '';
+
+    var readMore = document.createElement('div');
+    readMore.setAttribute('class', 'readMore');
+    readMore.innerHTML = 'Read more here: ';
+
+    var readMorePage = document.createElement('a');
+    readMorePage.setAttribute('href', 'https://www.wildfirecu.org/education-and-resources/blog/blog-post/wildfire-blog/how-to-spot-a-phishing-website');
+    readMorePage.innerHTML = 'How to detect a Phishing Page';
+
+    readMore.appendChild(readMorePage);
+    hoverContainerBackground.appendChild(siteInfoText);
+    hoverContainerBackground.appendChild(justifyPhish);
+    hoverContainerBackground.appendChild(readMore);
+
+    icon.parentNode.appendChild(container);
 }
 
 async function siteInSuspected(site){
@@ -94,7 +177,6 @@ async function siteInSuspected(site){
             return true;
         }
     }
-    console.log(site + "\nnot found in suspected sites.");
     return false;
 }
 
@@ -106,6 +188,5 @@ async function siteInSafe(site){
             return true;
         }
     }
-    console.log(site + "\nnot found in safe sites.");
     return false;
 }
