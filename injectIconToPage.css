@@ -18,13 +18,17 @@
     fill: rgb(243, 227, 0);
 }
 
+.appendedSecurityLogo:hover {
+    fill: grey;
+}
+
 .safeSecurityLogo{
     fill:green;
 }
 
-.iconHovered {
+/* .iconHovered {
     fill: white;
-}
+} */
 
 .iconInfoText{
     visibility: hidden;
@@ -52,10 +56,12 @@
 /****************** HOVER CONTAINER**********************/
 
 .hoverContainer {
+    position: absolute;
     opacity: 0;
-    z-index:3;
+    z-index:3000;
     width: 300px;
     font-family: 'Roboto';
+    font-size: 12pt;
     font-weight: bold;
     text-align: center;
     background-color: white;
@@ -74,7 +80,6 @@
 }
 
 .siteInfoText {
-    background-color: #808080;
     color: white;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
@@ -88,7 +93,30 @@
     background-color: rgb(80, 219, 110);
 }
 
+.boxLowerPart {
+    background-color: #F0F0F0;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.justifyPhish {
+/*     border-bottom-style: black 2px solid;  */
+    font-weight:500;
+}
+
+.hoverContainerBackground .boxLowerPart .separatorLine {
+    align-items: center;
+    height: 1px;
+    background: #8D9386;
+    padding: 0px;
+    margin: 5px 15px;
+}
+
 .readMore {
     white-space: pre-line;
     font-weight:500;
+}
+
+.readMore a{
+    color:#3366cc;
 }
