@@ -28,7 +28,7 @@ body{
 
 .iconsRight {
     justify-content: flex-end;
-    right: 100px;
+    right: 0px;
     align-items: center;
 }
 

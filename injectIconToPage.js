@@ -5,12 +5,13 @@ let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main
 var allKnownSites;
 var phishingSites;
 var safeSites;
+var currentSite = window.location.toString();
+var currentSiteShort = window.location.toString().split('/')[2];
 
 var language = "german";
 
 async function main(){
     await declareSites();
-    var currentSite = window.location.toString();
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
         inputPDIcon(pwElems);
@@ -49,7 +50,7 @@ async function declareSites(){
 //Platziert das PD Icon neben allen übergebenen Feldern
 function inputPDIcon(pwElems) {
     for(let item of pwElems){
-        item.placeholder=texts.texts.placeholderPassword[language];
+        item.placeholder = texts.texts.placeholderPassword[language];
         //create item svg
         //TODO: Altes Logo von Icons8 --> Erneuern
         var newIcon = document.createElement('span');
@@ -130,7 +131,7 @@ function appendTexts(rating, reason){
     var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
     var recommendation = document.getElementsByClassName('recommendation')[0];
     siteInfoText.innerHTML = texts.texts.hoverBox.warningType[rating][language] + ": "
-     + window.location.toString().split('/')[2] + texts.texts.hoverBox.warningText[rating][language];
+     + currentSiteShort + texts.texts.hoverBox.warningText[rating][language];
     justifyPhish.innerHTML = texts.texts.hoverBox.warningReason[rating][reason][language];
     recommendation.innerHTML = texts.texts.hoverBox.actionProposed[rating][language];
 }
@@ -142,6 +143,13 @@ function warning(reason){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextWarning');
     appendTexts("severe", reason);
+
+    var values = [currentSiteShort, "warning", reason];
+    chrome.storage.sync.set({key: values}, function() {
+        console.log('Data for popup is set to ' + values);
+    });
+      
+
 }
 
 //Erstellt alle Infos für den Fall einer sicheren Seite
@@ -151,6 +159,12 @@ function safe(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextSafe');
     appendTexts("safe", "database");
+
+    reason = "whitelist";
+    var values = [currentSiteShort, "safe", reason];
+    chrome.storage.sync.set({key: values}, function() {
+        console.log('Data for popup is set to ' + values);
+    });
 }
 
 //Erstellt alle Infos für den Fall einer unbekannten Seite

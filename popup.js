@@ -1,80 +1,115 @@
-let page = document.getElementById("buttonDiv");
-let selectedClassName = "current";
-const presetButtonColors = ["#3aa757", "#e8453c", "#f9bb2d", "#4688f1", "#ffffff", "#000000"];
+var language = "german";
+var texts = "hello";
 
-
-async function changeColor () {
-    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      function: setPageBackgroundColor,
-    });
+function createElementWithClass(type, className) {
+  const element = document.createElement(type);
+  element.className = className;
+  return element;
 }
 
-// Reacts to a button click by marking the selected button and saving
-// the selection
-function handleButtonClick(event) {
-
-
-  console.log(event);
-  // Remove styling from the previously selected color
-  let current = event.target.parentElement.querySelector(
-    `.${selectedClassName}`
+function init(){
+  var container = createElementWithClass('div', 'popupContainer');
+  var identifier = container.appendChild(createElementWithClass('div', 'identifier'));
+  var logo = identifier.appendChild(createElementWithClass('div', 'logo'));
+  var newItemSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  var newItemPath = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'path'
   );
-  if (current && current !== event.target) {
-    current.classList.remove(selectedClassName);
-  }
+  newItemSVG.setAttribute('fill', '#000000');
+  newItemSVG.setAttribute('viewBox', '0 0 172 172');
+  newItemSVG.setAttribute('class', 'logo');
+  newItemPath.setAttribute(
+    'd',
+    "M86,17.2c-26.3848,0 -53.82839,5.94609 -53.82839,5.94609l-0.0224,0.0224c-5.35441,1.07186 -9.21013,5.77087 -9.21589,11.23151v45.86667c0,13.18667 3.17824,24.19646 8.0401,33.36979l118.09323,-69.97578v-9.26068c0.00279,-5.47597 -3.86671,-10.18973 -9.23828,-11.25391c0,0 -27.44359,-5.94609 -53.82839,-5.94609zM57.33333,40.13333l8.6,11.46667l-8.6,11.46667l-8.6,-11.46667zM149.06667,56.9862l-111.91198,66.32526c16.78668,22.03354 42.02384,29.91384 44.81406,30.73829c0.27976,0.10814 0.56366,0.20526 0.85104,0.29114c0.0045,0.00126 0.16797,0.05599 0.16797,0.05599h0.04479c0.96727,0.26352 1.96493,0.39905 2.96745,0.40312c1.01752,-0.00013 2.03049,-0.13569 3.01224,-0.40312c0.18813,-0.05493 0.37482,-0.11467 0.55989,-0.17917c3.08872,-0.90331 59.49453,-18.17289 59.49453,-73.95104zM114.66667,97.46667l8.6,11.46667l-8.6,11.46667l-8.6,-11.46667z"
+  );
+  newItemSVG.appendChild(newItemPath);
+  logo.appendChild(newItemSVG);
+  var nameExtension = identifier.appendChild(createElementWithClass('div', 'name'));
+  nameExtension.innerHTML = 'Phishing Detector';
+  iconsRight = identifier.appendChild(createElementWithClass('div', 'iconsRight'));
+  var infoImg = iconsRight.appendChild(createElementWithClass('img', 'logoIMG'));
+  infoImg.setAttribute('src', 'https://img.icons8.com/ios-glyphs/30/000000/info--v1.png');
+  var settings = iconsRight.appendChild(createElementWithClass('img', 'settings'));
+  settings.setAttribute('src', 'https://img.icons8.com/ios-filled/30/000000/settings.png');
+  container.appendChild(createElementWithClass('div', 'separatorLine'));
 
-  // Mark the button as selected
-  let color = event.target.dataset.color;
-  event.target.classList.add(selectedClassName);
-  chrome.storage.sync.set({ color });
-  changeColor();
-  
-  // opens a communication between scripts
-  var port = chrome.runtime.connect();
-  port.postMessage({
-    'from': 'popup',
-    'message' : 'Hello'
-});
-  
-}
-
-// Add a button to the page for each supplied color
-function constructOptions(buttonColors) {
-  chrome.storage.sync.get("color", (data) => {
-    let currentColor = data.color;
-    // For each color we were provided…
-    for (let buttonColor of buttonColors) {
-      // …create a button with that color…
-      let button = document.createElement("button");
-      button.dataset.color = buttonColor;
-      button.style.backgroundColor = buttonColor;
-
-      // …mark the currently selected color…
-      if (buttonColor === currentColor) {
-        button.classList.add(selectedClassName);
-      }
-
-      // …and register a listener for when that button is clicked
-      button.addEventListener("click", handleButtonClick);
-      
-      page.appendChild(button);
-      console.log("Button built");
-    }
+  pageInfos = container.appendChild(createElementWithClass('div', 'pageInfos'));
+  var currentPageText = pageInfos.appendChild(createElementWithClass('div', 'currentPageText'));
+  var currentPageColored = pageInfos.appendChild(createElementWithClass('div', 'currentPageColored'));
+  var currentPageIMG = currentPageColored.appendChild(createElementWithClass('img', 'currentPageIMG'));
+  currentPageIMG.setAttribute('src', 'https://img.icons8.com/ios-glyphs/30/000000/knight-shield.png');
+  var currentPageShortIndication = currentPageColored.appendChild(createElementWithClass('div', 'currentPageShortIndication'));
+  var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
+  currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
+  var warningType;
+  var warningReason;
+  var currentSite;
+  chrome.storage.sync.get(['key'], function(result) {
+    console.log('Value currently is ' + result.key);
+    currentSite = result.key[0];
+    warningType = result.key[1];
+    warningReason = result.key[2];
+    setIdentifierText(pageInfos, currentSite, warningType, warningReason);
   });
+  
+
+  container.appendChild(createElementWithClass('div', 'separatorLine'));
+  document.body.appendChild(container);
 }
 
-// Initialize the page by constructing the color options
-constructOptions(presetButtonColors);
 
-// The body of this function will be executed as a content script inside the
-// current page
-function setPageBackgroundColor() {
-chrome.storage.sync.get("color", ({ color }) => {
-    document.body.style.backgroundColor = color;
-});
+
+function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
+  if(warningReason == "blacklist"){
+    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.severe.blacklist[language];
+    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.severe[language];
+  }
+  if(warningReason == "whitelist"){
+    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.safe.whitelist[language];
+    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.safe[language];
+  }
 }
 
-//Haken zum Speichern von sicheren Webseiten
+//Beinhaltet alle Texte der Extension auf Englisch und Deutsch
+texts = {
+  "version": "1.0",
+  "languages": {
+      "english": true,
+      "german": true
+  },
+  "texts": {
+    "currentPage": {
+      "currentPageText": {
+        "english": "CURRENT PAGE",
+        "german": "AKTUELLE SEITE"
+      },
+      "shortIndication": {
+        "severe": {
+          "english": "Fradulent Site",
+          "german": "Sch&auml;dliche Seite"
+        },
+        "safe": {
+          "english": "Safe Site",
+          "german": "Sichere Seite"
+        }
+      },
+      "justification": {
+        "severe": {
+          "blacklist": {
+            "english": " we found in our database of known fradulent sites. Do NOT enter any data here, the operator of the site is a fraudster.",
+            "german": " haben wir in unserer Datenbank sch&auml;dlicher Webseiten gefunden. Geben Sie hier KEINE Daten ein, da der Betreiber der Seite ein Betr&uuml;ger ist."
+          },
+        },
+        "safe": {
+          "whitelist": {
+            "english": " we found in our database of safe sites. You can enter your data here without concerns.",
+            "german": " haben wir in unserer Datenbank sicherer Webseiten gefunden. Sie k&ouml;nnen Ihre Daten hier ohne Bedenken eingeben."
+          }
+        }
+      }
+    }
+  }
+};
+
+init();
