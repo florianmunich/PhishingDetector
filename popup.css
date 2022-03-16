@@ -1,6 +1,13 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+
 body{
-    background-color: #808080;
+    background-color: mediumseagreen;
 }
+body.warning{
+    background-color:tomato;
+}
+
+/******************************************** General ****************************************/
 .popupContainer{
     display: flex;
     flex-direction: column;
@@ -9,22 +16,31 @@ body{
     position: static;
     width: 350px;
     /* height: 500px; */
-    background-color: #dddddd;
+    background-color: #eeeeee;
 
     z-index:3000;
     font-family: 'Roboto';
-    font-size: 12pt;
+    font-size: 11pt;
     font-weight: bold;
     text-align: left;
     border-radius: 10px;
 }
 
-.identifier {
+.pageInfos, .settings, .infos{
+    font-family: 'Roboto';
+    color: #707070;
+    margin: 10px 15px;
+}
+
+.identifier, .currentPageColored {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 5px;
+    padding: 5px 0px;
 }
+
+/**************************************** End General ****************************************/
+/*****************************************Name and Icons *************************************/
 
 .iconsRight {
     justify-content: flex-end;
@@ -34,19 +50,83 @@ body{
 
 .logo{
     position: static;
-    height: 35px;
+}
+
+.logo IMG{
+    width: 35px;
+    margin: 0px 5px 0px 0px;
 }
 
 .name {
     font-size: 14pt;
+    margin: 0px 70px 0px 0px;
 }
+
+/**************************************** End Name and Icons *********************************/
+/**************************************** Current Page ***************************************/
 
 .separatorLine {
     position: static;
-    width: 80%;
-/*     margin: 5% 10%;
- */    height: 1px;
+    width: 90%;
+    height: 1px;
     background: #474C59;
+}
+
+.currentPageText {
+    font-size: 9pt;
+}
+
+.currentPageIMG {
+    width: 60px;
+    margin: 0px 10px 0px 0px;
+    -w-embedSVG:yes;
+}
+
+.currentPageShortIndication {
+    font-size: 22pt;
+}
+
+.warning .currentPageColored {
+    color: tomato;   
+}
+
+.safe .currentPageColored {
+    color: mediumseagreen;   
+}
+
+
+/**************************************** End Current page ***********************************/
+/******************************************** Settings ***************************************/
+
+.settingBox {
+    margin: 0px 0px 10px 0px;
+    display: flex;
+    float: left;
+    align-items: row;
+}
+
+.settingTitle {
+    font-size: 14pt;
+    color: black;
+}
+
+.settingExplanation {
+    font-size: 8pt;
+}
+
+.settingInfos {
+    width: 260px;
+}
+
+.languageSelectionBox {
+    display: flex;
+    float: left;
+    align-items: row;
+    justify-content: flex-end;
+}
+
+.languageSelectionBox .settingInfos {
+    width: 245px;
 }
 
 /* The switch - the box around the slider */
@@ -113,17 +193,4 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-.settingBox {
-    display: flex;
-    float: left;
-    align-items: row;
-
-}
-
-.settingInfos {
-    width: 300px;
-}
-
-.switch {
-    left: 0px;
-}
+/************************************* End Slider ***********************************/
