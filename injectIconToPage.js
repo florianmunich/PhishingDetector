@@ -203,8 +203,8 @@ async function siteInSafe(site){
 var texts = {
     "version": "1.0",
     "languages": {
-        "english": true,
-        "german": true
+        "english": "English",
+        "german": "Deutsch"
     },
     "texts": {
         "hoverBox": {
