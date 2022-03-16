@@ -1,5 +1,4 @@
 var language = "german";
-var texts = "hello";
 
 function createElementWithClass(type, className) {
   const element = document.createElement(type);
@@ -8,7 +7,10 @@ function createElementWithClass(type, className) {
 }
 
 function init(){
+  //General Container
   var container = createElementWithClass('div', 'popupContainer');
+
+  //Upper Part with Logo, name etc
   var identifier = container.appendChild(createElementWithClass('div', 'identifier'));
   var logo = identifier.appendChild(createElementWithClass('div', 'logo'));
   var newItemSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -34,6 +36,7 @@ function init(){
   settings.setAttribute('src', 'https://img.icons8.com/ios-filled/30/000000/settings.png');
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
+  //Page Info Part
   pageInfos = container.appendChild(createElementWithClass('div', 'pageInfos'));
   var currentPageText = pageInfos.appendChild(createElementWithClass('div', 'currentPageText'));
   var currentPageColored = pageInfos.appendChild(createElementWithClass('div', 'currentPageColored'));
@@ -52,9 +55,64 @@ function init(){
     warningReason = result.key[2];
     setIdentifierText(pageInfos, currentSite, warningType, warningReason);
   });
-  
 
   container.appendChild(createElementWithClass('div', 'separatorLine'));
+
+  //settings Switches
+  function addSetting(optionID, name, explanation){
+    var container = createElementWithClass('div', "settingBox");
+    container.setAttribute('id', optionID);
+    var textsSetting = container.appendChild(createElementWithClass('span', 'settingInfos'));
+    var title = textsSetting.appendChild(createElementWithClass('div', 'settingTitle'));
+    title.innerHTML = name;
+    var explanationHTML = textsSetting.appendChild(createElementWithClass('div', 'settingExplanation'));
+    explanationHTML.innerHTML = explanation;
+    var switchBox = container.appendChild(createElementWithClass('label', 'switch'));
+    switchBoxInput = switchBox.appendChild(createElementWithClass('input', 'switchInput'));
+    switchBoxInput.setAttribute('type', 'checkbox');
+    switchBoxInput.checked = true;
+    switchBox.appendChild(createElementWithClass('span', 'slider round'));
+    console.log(container);
+    return container;
+  }
+
+  //Add options
+  settingsBox = container.appendChild(createElementWithClass('div', 'settings'));
+
+  settingsBox.appendChild(addSetting('optionActivate', texts.texts.settings.active.title[language], texts.texts.settings.active.explanation[language]));
+  settingsBox.appendChild(addSetting('optionColorBackground', texts.texts.settings.backgroundIndication.title[language], texts.texts.settings.backgroundIndication.explanation[language]));
+  settingsBox.appendChild(addSetting('optionBlockInputs', texts.texts.settings.blockInputs.title[language], texts.texts.settings.blockInputs.explanation[language]));
+  //Language
+  function addLanguageDropdown(){
+    var container = createElementWithClass('div', "languageSelectionBox");
+    container.setAttribute('id', 'languageSelection');
+    var textsSetting = container.appendChild(createElementWithClass('span', 'settingInfos'));
+    var title = textsSetting.appendChild(createElementWithClass('div', 'settingTitle'));
+    title.innerHTML = texts.texts.settings.language[language];
+    var switchBox = container.appendChild(createElementWithClass('select', 'languageSelection'));
+    for (var i in texts.languages) {
+        console.log("I: " + i);
+        languageI = switchBox.appendChild(document.createElement('option'));
+        languageI.setAttribute('value', i);
+        languageI.innerHTML = texts.languages[i];
+    }
+    switchBox.appendChild(createElementWithClass('languageOption'));
+    return container;
+  }
+  settingsBox.appendChild(addLanguageDropdown());
+
+
+  container.appendChild(createElementWithClass('div', 'separatorLine'));
+
+  var infoBox = container.appendChild(createElementWithClass('div', 'infos'));
+  var infoHeadline = infoBox.appendChild(createElementWithClass('div', 'infoHeadline'));
+  infoHeadline.innerHTML = texts.texts.infoBox.headline[language];
+  var infoText = infoBox.appendChild(createElementWithClass('div', 'infoText'));
+  infoText.innerHTML = texts.texts.infoBox.infoText[language];
+
+  //Info Part
+
+  //Add container to page
   document.body.appendChild(container);
 }
 
@@ -75,8 +133,8 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
 texts = {
   "version": "1.0",
   "languages": {
-      "english": true,
-      "german": true
+      "english": "English",
+      "german": "Deutsch"
   },
   "texts": {
     "currentPage": {
@@ -107,6 +165,52 @@ texts = {
             "german": " haben wir in unserer Datenbank sicherer Webseiten gefunden. Sie k&ouml;nnen Ihre Daten hier ohne Bedenken eingeben."
           }
         }
+      }
+    },
+    "settings": {
+      "active": {
+        "title": {
+          "english": "Activate Phishing-Protection",
+          "german": "Phishing-Schutz aktivieren"
+        },
+        "explanation": {
+          "english": "Activate general functions of the plugin",
+          "german": "Allgemeine Funktion des Plugins aktivieren"
+        }
+      },
+      "backgroundIndication": {
+        "title": {
+          "english": "Color background",
+          "german": "Hintergrund einf&auml;rben"
+        },
+        "explanation": {
+          "english": "For detected malicious websites, additionally color background red",
+          "german": "Bei erkannten sch&auml;dlichen Webseiten Hintergrund zus&auml;tzlich rot einf&auml;rben"
+        }
+      },
+      "blockInputs": {
+        "title": {
+          "english": "Block inputs",
+          "german": "Eingaben sperren"
+        },
+        "explanation": {
+          "english": "For recognized malicious websites, allow input only after explicit confirmation",
+          "german": "Bei erkannten sch&auml;dlichen Webseiten Eingaben nur nach expliziter Best&auml;tigung erlauben"
+        }
+      },
+      "language":{
+        "english": "Language",
+        "german": "Sprache"
+      }
+    },
+    "infoBox": {
+      "headline": {
+        "english": "How does it work?",
+        "german": "Wie funktioniert es?"
+      },
+      "infoText": {
+        "english": "English: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.",
+        "german": "Deutsch: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
       }
     }
   }
