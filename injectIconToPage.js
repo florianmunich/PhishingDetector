@@ -30,7 +30,15 @@ async function main(){
     }
 
 }
-main();
+
+
+//Start routine if plugin is enabled
+chrome.storage.sync.get("PDactivationStatus", function(items){
+    enabled = items['PDactivationStatus'];
+    console.log(enabled);
+    if(enabled)
+        main()
+});
 
 //Lädt die Liste der bekannten Seiten herunter
 async function getknownSites() {
@@ -145,9 +153,10 @@ function warning(reason){
     appendTexts("severe", reason);
 
     var values = [currentSiteShort, "warning", reason];
-    chrome.storage.sync.set({key: values}, function() {
+    chrome.storage.sync.set({'PDcurrentSiteInfos': values}, function() {});
+/*     chrome.storage.sync.set({key: values}, function() {
         console.log('Data for popup is set to ' + values);
-    });
+    }); */
       
 
 }
