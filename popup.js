@@ -36,12 +36,15 @@ function init(){
   var warningType;
   var warningReason;
   var currentSite;
-  chrome.storage.sync.get(['key'], function(result) {
+/*   chrome.storage.sync.get(['key'], function(result) {
     console.log('Value currently is ' + result.key);
     currentSite = result.key[0];
     warningType = result.key[1];
     warningReason = result.key[2];
     setIdentifierText(pageInfos, currentSite, warningType, warningReason);
+  }); */
+  chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
+    values = items['PDcurrentSiteInfos'];
   });
 
   container.appendChild(createElementWithClass('div', 'separatorLine'));
