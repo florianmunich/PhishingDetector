@@ -12,7 +12,7 @@ chrome.runtime.onInstalled.addListener(() => {
 //set default settings
 chrome.storage.sync.set({'PDactivationStatus': true}, function() {});
 chrome.storage.sync.set({'PDsetBGColor': true}, function() {});
-chrome.storage.sync.set({'PDblockEntries': true}, function() {});
+chrome.storage.sync.set({'PDblockEntries': false}, function() {});
 chrome.storage.sync.set({'PDlanguage': "english"}, function() {});
 chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
 

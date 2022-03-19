@@ -1,6 +1,3 @@
-//document.body.style.backgroundColor = 'orange';
-
-
 let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/safeSites.json?token=GHSAT0AAAAAABSOONFIZNM6SZZOYFTYNUDUYRW5FNQ';
 var allKnownSites;
 var phishingSites;
@@ -30,7 +27,6 @@ async function main(){
     }
 
 }
-
 
 //Start routine if plugin is enabled
 chrome.storage.sync.get("PDactivationStatus", function(items){
@@ -151,6 +147,15 @@ function warning(reason){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextWarning');
     appendTexts("severe", reason);
+
+    //Set Background color to red if enabled
+    chrome.storage.sync.get("PDsetBGColor", function(items){
+        enabled = items['PDsetBGColor'];
+        console.log(enabled);
+        if(enabled)
+            document.body.style.backgroundColor = 'red';
+            //TODO: Wieder neutral setzen danach!!!
+    });
 
     var values = [currentSiteShort, "warning", reason];
     chrome.storage.sync.set({'PDcurrentSiteInfos': values}, function() {});

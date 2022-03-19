@@ -6,7 +6,11 @@ function createElementWithClass(type, className) {
   return element;
 }
 
-function init(){
+function handleSettingClick(event) {
+  console.log(event);
+}
+
+async function init(){
   //General Container
   var container = createElementWithClass('div', 'popupContainer');
 
@@ -33,18 +37,10 @@ function init(){
   var currentPageShortIndication = currentPageColored.appendChild(createElementWithClass('div', 'currentPageShortIndication'));
   var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
   currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
-  var warningType;
-  var warningReason;
-  var currentSite;
-/*   chrome.storage.sync.get(['key'], function(result) {
-    console.log('Value currently is ' + result.key);
-    currentSite = result.key[0];
-    warningType = result.key[1];
-    warningReason = result.key[2];
-    setIdentifierText(pageInfos, currentSite, warningType, warningReason);
-  }); */
   chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
+    console.log(items);
     values = items['PDcurrentSiteInfos'];
+    setIdentifierText(pageInfos, currentSite = values[0], warningType = values[1], warningReason = values[2]);
   });
 
   container.appendChild(createElementWithClass('div', 'separatorLine'));
@@ -63,15 +59,30 @@ function init(){
     switchBoxInput.setAttribute('type', 'checkbox');
     switchBoxInput.checked = true;
     switchBox.appendChild(createElementWithClass('span', 'slider round'));
+
+    switchBox.addEventListener("click", handleSettingClick);
     return container;
   }
 
   //Add options
   settingsBox = container.appendChild(createElementWithClass('div', 'settings'));
 
-  settingsBox.appendChild(addSetting('optionActivate', texts.texts.settings.active.title[language], texts.texts.settings.active.explanation[language]));
-  settingsBox.appendChild(addSetting('optionColorBackground', texts.texts.settings.backgroundIndication.title[language], texts.texts.settings.backgroundIndication.explanation[language]));
-  settingsBox.appendChild(addSetting('optionBlockInputs', texts.texts.settings.blockInputs.title[language], texts.texts.settings.blockInputs.explanation[language]));
+  settingA = settingsBox.appendChild(addSetting('PDactivationStatus', texts.texts.settings.active.title[language], texts.texts.settings.active.explanation[language]));
+  settingB = settingsBox.appendChild(addSetting('PDsetBGColor', texts.texts.settings.backgroundIndication.title[language], texts.texts.settings.backgroundIndication.explanation[language]));
+  settingC = settingsBox.appendChild(addSetting('PDblockEntries', texts.texts.settings.blockInputs.title[language], texts.texts.settings.blockInputs.explanation[language]));
+  
+  async function setProperty(setting){
+    await chrome.storage.sync.get(setting.id, function(items){
+      enabled = items[setting.id];
+      if(!enabled){
+        setting.lastChild.firstChild.checked = false;
+      }
+    });
+  }
+  setProperty(settingA);
+  setProperty(settingB);
+  setProperty(settingC);
+  
   //Language
   function addLanguageDropdown(){
     var container = createElementWithClass('div', "languageSelectionBox");
@@ -90,22 +101,18 @@ function init(){
   }
   settingsBox.appendChild(addLanguageDropdown());
 
-
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
+  //Info Part
   var infoBox = container.appendChild(createElementWithClass('div', 'infos'));
   var infoHeadline = infoBox.appendChild(createElementWithClass('div', 'infoHeadline'));
   infoHeadline.innerHTML = texts.texts.infoBox.headline[language];
   var infoText = infoBox.appendChild(createElementWithClass('div', 'infoText'));
   infoText.innerHTML = texts.texts.infoBox.infoText[language];
 
-  //Info Part
-
   //Add container to page
   document.body.appendChild(container);
 }
-
-
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   if(warningReason == "blacklist"){
