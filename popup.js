@@ -110,11 +110,15 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     htmlObject.classList.add('warning');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.severe.blacklist[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.severe[language];
+    var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
+    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_red.svg');
   }
   if(warningReason == "whitelist"){
     htmlObject.classList.add('safe');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.safe.whitelist[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.safe[language];
+    var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
+    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_green.svg');
   }
 }
 
