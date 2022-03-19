@@ -8,40 +8,13 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("Plugin up and running");
 });
 
-// opens a communication port
-/* chrome.runtime.onConnect.addListener(function(port) {
 
-    // listen for every message passing throw it
-    port.onMessage.addListener(function(o) {
-
-        // if the message comes from the popup
-        if (o.from && o.from === 'popup') {
-            if(o.message == "URLrequest"){
-                url = getCurrentPage();
-                sendResponse({urlpage: url});
-            }
-
-            console.log("Received message");
-            console.log(o.message);
-            
-            // inserts a script into your tab content
-            //chrome.tabs.executeScript(null, {
-
-                // the script will click the button into the tab content
-                //code: "document.getElementById('pageBtn').click();"
-                
-            //});
-        }
-    });
-}); */
-
-/* chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
-    if (changeInfo.status == 'complete') {
-  
-        currentWebsite = getCurrentPage();
-  
-    }
-  }); */
+//set default settings
+chrome.storage.sync.set({'PDactivationStatus': true}, function() {});
+chrome.storage.sync.set({'PDsetBGColor': true}, function() {});
+chrome.storage.sync.set({'PDblockEntries': true}, function() {});
+chrome.storage.sync.set({'PDlanguage': "english"}, function() {});
+chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
 
 var message = "testmessage";
 chrome.runtime.onMessage.addListener(
