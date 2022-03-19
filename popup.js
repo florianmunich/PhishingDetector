@@ -7,7 +7,19 @@ function createElementWithClass(type, className) {
 }
 
 function handleSettingClick(event) {
+  if(event.pointerID == -1) return;
   console.log(event);
+  let activeSwitch = event.target.parentElement.querySelector(
+    `.${"switchInput"}`
+  );
+  let setting = event.target.parentElement.parentElement.id;
+  currentSettingStatus = true;
+  chrome.storage.sync.get(setting, function(items){
+    console.log(items);
+    currentStatus = !items[setting];
+    chrome.storage.sync.set({setting: currentStatus}, function() {});
+    console.log(currentStatus);
+  });
 }
 
 async function init(){
