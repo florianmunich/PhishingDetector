@@ -56,7 +56,6 @@
 
 .hoverContainer {
     position: absolute;
-    opacity: 0;
     z-index:3000;
     width: 300px;
     font-family: 'Roboto';
@@ -69,9 +68,6 @@
 /*     wird noch nicht angezeigt
  */    outline-color: #808080;
     outline-width: 2px;
-}
-.hoverContainerOnHover{
-    opacity: 1;
 }
 
 .hoverContainerBackground div{

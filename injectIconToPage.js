@@ -5,22 +5,28 @@ var safeSites;
 var currentSite = window.location.toString();
 var currentSiteShort = window.location.toString().split('/')[2];
 
+//check site and write current information in Chrome storage
+var phishingSite;
+var safeSite;
+
 var language = "english"; //Default, can be overwritten by chrome storage
 
 
 async function main(){
     await chrome.storage.sync.get('PDlanguage', function(items){
         language = items['PDlanguage'];
-        console.log(items['PDlanguage'] + language);
     });
     await sleep(1);
 
     await declareSites();
 
     //check site and write current information in Chrome storage
-    var phishingSite = await siteInSuspected(currentSite);
-    var safeSite = await siteInSafe(currentSite);
+    phishingSite = await siteInSuspected(currentSite);
+    safeSite = await siteInSafe(currentSite);
+
+    console.log("MainSafeSite: " + safeSite);
     if(safeSite){
+        
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
     }
     if(phishingSite){
@@ -32,26 +38,13 @@ async function main(){
 
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
-        inputPDIcon(pwElems);
-        
-        if(phishingSite){
-            warning("blacklist");
-        }
-        var safeSite = await siteInSafe(currentSite);
-        if(safeSite){
-            safe();
-        }
-        if(!safeSite && !phishingSite){
-            console.log("Site was not found safe or unsafe");
-            unknown();
-        }
+        await inputPDIcon(pwElems);
     }
 }
 
 //Start routine if plugin is enabled
 chrome.storage.sync.get("PDactivationStatus", function(items){
     enabled = items['PDactivationStatus'];
-    console.log(enabled);
     if(enabled)
         main()
 });
@@ -74,10 +67,11 @@ async function declareSites(){
     await getknownSites();
     phishingSites = allKnownSites.phishingSites;
     safeSites = allKnownSites.safeSites;
+    console.log(safeSites);
 }
 
 //Platziert das PD Icon neben allen übergebenen Feldern
-function inputPDIcon(pwElems) {
+async function inputPDIcon(pwElems) {
     for(let item of pwElems){
         item.placeholder = texts.texts.placeholderPassword[language];
         //create item svg
@@ -98,6 +92,14 @@ function inputPDIcon(pwElems) {
         );
         newIcon.appendChild(newItemSVG);
         newItemSVG.appendChild(newItemPath);
+        
+        console.log("safeSite: " + safeSite);
+
+        //set safe status
+        if(phishingSite){newItemSVG.classList.add('warningSecurityLogo');}
+        else if(safeSite){newItemSVG.classList.add('safeSecurityLogo');}
+        else {newItemSVG.classList.add('unknownSecurityLogo');}
+
 
 /*         var position = item.getBoundingClientRect();
         newIcon.style.left = position.left + position.width + 'px';
@@ -106,17 +108,33 @@ function inputPDIcon(pwElems) {
         item.parentNode.appendChild(newIcon);
         iconAppended = newItemSVG;//document.getElementsByClassName('appendedSecurityLogo')[0];
 
-        container = buildInfoContainer(iconAppended);
-        iconAppended.addEventListener("mouseenter", function(event) {
+        var container;
+        
+        iconAppended.addEventListener("mouseenter", async function(event) {
+            if(!(container == undefined)){return;}
+            container = buildInfoContainer(iconAppended);
             console.log("hover");
             iconAppended.classList.add('iconHovered');
             container.classList.add('hoverContainerOnHover');
-        })
-        document.body.addEventListener("click", function(event) {
-            console.log("unhover");
-            iconAppended.classList.remove('iconHovered');
-            container.classList.remove('hoverContainerOnHover');
-        })
+            if(phishingSite){
+                warning("blacklist");
+            }
+            var safeSite = await siteInSafe(currentSite);
+            if(safeSite){
+                safe();
+            }
+            if(!safeSite && !phishingSite){
+                unknown();
+            }
+
+            document.body.addEventListener("click", function(event) {
+                if(container == undefined) {return;}
+                iconAppended.classList.remove('iconHovered');
+                container.remove();
+                container = undefined;
+                //container.classList.remove('hoverContainerOnHover');
+            });
+        });
     }
 }
 
@@ -173,8 +191,6 @@ function appendTexts(rating, reason){
 
 //Erstellt alle Infos für den Fall einer Warnung
 function warning(reason){
-    var icon = document.getElementsByClassName("appendedSecurityLogo")[0];
-    icon.classList.add('warningSecurityLogo');
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextWarning');
     appendTexts("severe", reason);
@@ -182,34 +198,26 @@ function warning(reason){
     //Set Background color to red if enabled
     chrome.storage.sync.get("PDsetBGColor", function(items){
         enabled = items['PDsetBGColor'];
-        console.log(enabled);
         if(enabled)
             document.body.style.backgroundColor = 'red';
             //TODO: Wieder neutral setzen danach!!!
     });
 
-    var values = [currentSiteShort, "warning", reason];
-    chrome.storage.sync.set({'PDcurrentSiteInfos': values}, function() {});
-/*     chrome.storage.sync.set({key: values}, function() {
-        console.log('Data for popup is set to ' + values);
-    }); */
-      
-
+/*     var values = [currentSiteShort, "warning", reason];
+    chrome.storage.sync.set({'PDcurrentSiteInfos': values}, function() {}); */
 }
 
 //Erstellt alle Infos für den Fall einer sicheren Seite
 function safe(){
-    var icon = document.getElementsByClassName("appendedSecurityLogo")[0];
-    icon.classList.add('safeSecurityLogo');
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextSafe');
     appendTexts("safe", "database");
 
-    reason = "whitelist";
+/*     reason = "whitelist";
     var values = [currentSiteShort, "safe", reason];
     chrome.storage.sync.set({key: values}, function() {
         console.log('Data for popup is set to ' + values);
-    });
+    }); */
 }
 
 //Erstellt alle Infos für den Fall einer unbekannten Seite
