@@ -5,14 +5,35 @@ var safeSites;
 var currentSite = window.location.toString();
 var currentSiteShort = window.location.toString().split('/')[2];
 
-var language = "german";
+var language = "english"; //Default, can be overwritten by chrome storage
+
 
 async function main(){
+    await chrome.storage.sync.get('PDlanguage', function(items){
+        language = items['PDlanguage'];
+        console.log(items['PDlanguage'] + language);
+    });
+    await sleep(1);
+
     await declareSites();
+
+    //check site and write current information in Chrome storage
+    var phishingSite = await siteInSuspected(currentSite);
+    var safeSite = await siteInSafe(currentSite);
+    if(safeSite){
+        chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
+    }
+    if(phishingSite){
+        chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "blacklist"]}, function() {});
+    }
+    if(!phishingSite && !safeSite){
+        chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
+    }
+
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
         inputPDIcon(pwElems);
-        var phishingSite = await siteInSuspected(currentSite);
+        
         if(phishingSite){
             warning("blacklist");
         }
@@ -25,7 +46,6 @@ async function main(){
             unknown();
         }
     }
-
 }
 
 //Start routine if plugin is enabled
@@ -35,6 +55,11 @@ chrome.storage.sync.get("PDactivationStatus", function(items){
     if(enabled)
         main()
 });
+
+//Wartet eine gegebene Zeit in Millisekunden
+function sleep(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
 
 //Lädt die Liste der bekannten Seiten herunter
 async function getknownSites() {
@@ -211,7 +236,6 @@ async function siteInSafe(site){
     }
     return false;
 }
-
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
 var texts = {
