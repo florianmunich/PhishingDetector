@@ -14,7 +14,7 @@
 }
 
 .unknownSecurityLogo{
-    fill: rgb(243, 227, 0);
+    fill: #fbba2e;
 }
 
 .appendedSecurityLogo:hover {
@@ -86,6 +86,10 @@
 
 .siteInfotextSafe {
     background-color: mediumseagreen;
+}
+
+.siteInfotextUnknown {
+    background-color: #fbba2e;
 }
 
 .boxLowerPart {

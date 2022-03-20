@@ -1,4 +1,4 @@
-let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/safeSites.json?token=GHSAT0AAAAAABSOONFIZNM6SZZOYFTYNUDUYRW5FNQ';
+let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/safeSites.json';
 var allKnownSites;
 var phishingSites;
 var safeSites;
@@ -26,7 +26,6 @@ async function main(){
 
     console.log("MainSafeSite: " + safeSite);
     if(safeSite){
-        
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
     }
     if(phishingSite){
@@ -222,9 +221,9 @@ function safe(){
 
 //Erstellt alle Infos für den Fall einer unbekannten Seite
 function unknown(){
-    var icon = document.getElementsByClassName("appendedSecurityLogo")[0];
-    icon.classList.add('unknownSecurityLogo');
-    icon.parentNode.setAttribute('title', 'Message from PD: We do not know this webpage. be careful when entering data.')
+    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
+    siteInfoText.classList.add('siteInfotextUnknown');
+    appendTexts("unknown", "noData");
 }
 
 //Checkt ob eine gegebene Seite in der Blacklist auftaucht
@@ -274,7 +273,8 @@ var texts = {
                     "german" : "Sicher"
                 },
                 "unknown": {
-
+                    "english": "Caution",
+                    "german" : "Vorsicht"
                 }
             },
             "warningText": {
@@ -285,7 +285,11 @@ var texts = {
                 "safe": {
                     "english": " is probably safe!",
                     "german" : " ist wahrscheinlich sicher!"
-            }
+                },
+                "unknown": {
+                    "english": " is not known!",
+                    "german" : " kennen wir nicht!"
+                }
             },
             "warningReason": {
                 "severe": {
@@ -299,6 +303,12 @@ var texts = {
                         "english": "Reason: We found the site our database.",
                         "german" : "Grund: Wir haben die Seite in unserer Datenbank gefunden."
                     }
+                },
+                "unknown": {
+                    "noData": {
+                        "english": "Reason: We could not find the site in our databases.",
+                        "german" : "Grund: Wir konnten die Seite nicht in unseren Datenbanken finden."
+                    }
                 }
             },
             "actionProposed": {
@@ -309,6 +319,10 @@ var texts = {
                 "safe": {
                     "english": "You can enter your data here with no concerns.",
                     "german" : "Sie können Ihre Daten ohne Bedenken eingeben."
+                },
+                "unknown": {
+                    "english": "Make sure you are on a valid page!",
+                    "german" : "Stellen Sie sicher auf der richtigen Seite zu sein!"
                 }
             },
             "detectInfo": {
