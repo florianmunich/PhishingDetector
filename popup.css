@@ -59,7 +59,7 @@ body.warning{
 
 .name {
     font-size: 14pt;
-    margin: 0px 70px 0px 0px;
+    margin: 0px 100px 0px 0px;
 }
 
 /**************************************** End Name and Icons *********************************/
@@ -94,6 +94,10 @@ body.warning{
     color: mediumseagreen;   
 }
 
+.unknown .currentPageColored {
+    color: #fbba2e;
+}
+
 
 /**************************************** End Current page ***********************************/
 /******************************************** Settings ***************************************/
@@ -108,6 +112,10 @@ body.warning{
 .settingTitle {
     font-size: 14pt;
     color: black;
+}
+
+.settingTitle.notApplicable {
+    color: #707070;
 }
 
 .settingExplanation {

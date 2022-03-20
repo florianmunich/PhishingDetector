@@ -1,4 +1,4 @@
-var language = "german";
+var language = "english"; //Default, can be overwritten by chrome storage
 
 function createElementWithClass(type, className) {
   const element = document.createElement(type);
@@ -6,23 +6,63 @@ function createElementWithClass(type, className) {
   return element;
 }
 
-function handleSettingClick(event) {
-  if(event.pointerID == -1) return;
-  console.log(event);
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+ }
+
+async function handleSettingClick(event) {
+  if(event.path[0].className == "switchInput"){
+    return;
+  }
   let activeSwitch = event.target.parentElement.querySelector(
     `.${"switchInput"}`
   );
   let setting = event.target.parentElement.parentElement.id;
-  currentSettingStatus = true;
+  var currentSettingStatus;
+  await chrome.storage.sync.get(setting, function(items){
+    currentSettingStatus = !items[setting];
+  });
+
+  await sleep(100);
+
+  //see what to save
+  if(setting == "PDactivationStatus") {
+    //the below buttons will be set to the general option also
+    await chrome.storage.sync.set({"PDactivationStatus": currentSettingStatus}, function() {});
+    await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+    BGButton = document.getElementById('PDsetBGColor');
+    BGButton.lastChild.firstChild.checked = currentSettingStatus;
+    await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
+    BEButton = document.getElementById('PDblockEntries');
+    BEButton.lastChild.firstChild.checked = currentSettingStatus;
+    //disable or enable buttons (If general functionality is disabled, the other functions will be not clickable)
+    BGButton.lastChild.firstChild.disabled = !currentSettingStatus;
+    BEButton.lastChild.firstChild.disabled = !currentSettingStatus;
+    //Color the options in grey if they are disabled
+    BGButton.firstChild.firstChild.classList.toggle('notApplicable');
+    BEButton.firstChild.firstChild.classList.toggle('notApplicable');
+
+  }
+  if(setting == "PDsetBGColor") {
+    await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+  }
+  if(setting == "PDblockEntries") {
+    await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
+  }
+  await sleep(100);
   chrome.storage.sync.get(setting, function(items){
-    console.log(items);
-    currentStatus = !items[setting];
-    chrome.storage.sync.set({setting: currentStatus}, function() {});
-    console.log(currentStatus);
+    console.log("Option set to: " + items[setting]);
   });
 }
 
 async function init(){
+
+  await chrome.storage.sync.get('PDlanguage', function(items){
+    language = items['PDlanguage'];
+  });
+
+  await sleep(1);
+
   //General Container
   var container = createElementWithClass('div', 'popupContainer');
 
@@ -36,8 +76,8 @@ async function init(){
   iconsRight = identifier.appendChild(createElementWithClass('div', 'iconsRight'));
   var infoImg = iconsRight.appendChild(createElementWithClass('img', 'logoIMG'));
   infoImg.setAttribute('src', 'https://img.icons8.com/ios-glyphs/30/000000/info--v1.png');
-  var settings = iconsRight.appendChild(createElementWithClass('img', 'settingsIcon'));
-  settings.setAttribute('src', 'https://img.icons8.com/ios-filled/30/000000/settings.png');
+/*   var settings = iconsRight.appendChild(createElementWithClass('img', 'settingsIcon'));
+  settings.setAttribute('src', 'https://img.icons8.com/ios-filled/30/000000/settings.png'); */
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
   //Page Info Part
@@ -50,7 +90,6 @@ async function init(){
   var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
   currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
   chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
-    console.log(items);
     values = items['PDcurrentSiteInfos'];
     setIdentifierText(pageInfos, currentSite = values[0], warningType = values[1], warningReason = values[2]);
   });
@@ -103,12 +142,25 @@ async function init(){
     var title = textsSetting.appendChild(createElementWithClass('div', 'settingTitle'));
     title.innerHTML = texts.texts.settings.language[language];
     var switchBox = container.appendChild(createElementWithClass('select', 'languageSelection'));
+
     for (var i in texts.languages) {
         languageI = switchBox.appendChild(document.createElement('option'));
         languageI.setAttribute('value', i);
         languageI.innerHTML = texts.languages[i];
     }
-    switchBox.appendChild(createElementWithClass('languageOption'));
+
+    for (var i, j= 0; i = switchBox.options[j]; j++) {
+      if(i.value == language){
+        switchBox.selectedIndex = j;
+        break;
+      }
+    }
+
+    switchBox.addEventListener("change", function(event) {
+      chrome.storage.sync.set({'PDlanguage': this.value}, function() {});
+      document.location.reload();
+    });
+
     return container;
   }
   settingsBox.appendChild(addLanguageDropdown());
@@ -127,7 +179,8 @@ async function init(){
 }
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
-  if(warningReason == "blacklist"){
+  console.log(htmlObject, currentSite, warningType, warningReason);
+  if(warningReason == "blacklist") {
     document.body.classList.add('warning');
     htmlObject.classList.add('warning');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.severe.blacklist[language];
@@ -135,12 +188,19 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
     logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_red.svg');
   }
-  if(warningReason == "whitelist"){
+  if(warningReason == "whitelist") {
     htmlObject.classList.add('safe');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.safe.whitelist[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.safe[language];
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
     logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_green.svg');
+  }
+  if(warningType == "unknown") {
+    htmlObject.classList.add('unknown');
+    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.unknown[language];
+    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.unknown[language];
+    var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
+    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_yellow.svg');
   }
 }
 
@@ -165,6 +225,10 @@ texts = {
         "safe": {
           "english": "Safe Site",
           "german": "Sichere Seite"
+        },
+        "unknown": {
+          "english": "Unknown Site",
+          "german": "Unbekannte Seite"
         }
       },
       "justification": {
@@ -179,6 +243,10 @@ texts = {
             "english": " we found in our database of safe sites. You can enter your data here without concerns.",
             "german": " haben wir in unserer Datenbank sicherer Webseiten gefunden. Sie k&ouml;nnen Ihre Daten hier ohne Bedenken eingeben."
           }
+        },
+        "unknown": {
+          "english": " we did NOT find in our databases. Be careful when entering data here!",
+          "german": " haben wir NICHT in unseren Datenbanken gefunden. Seien Sie vorsichtig, wenn Sie hier Daten eingeben!"
         }
       }
     },
