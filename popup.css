@@ -6,6 +6,9 @@ body{
 body.warning{
     background-color:tomato;
 }
+body.unknown{
+    background-color: #fbba2e;
+}
 
 /******************************************** General ****************************************/
 .popupContainer{

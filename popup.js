@@ -10,6 +10,7 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
  }
 
+//Sets the new Seeting option to the chrome storage and updates all other settings accordingly
 async function handleSettingClick(event) {
   if(event.path[0].className == "switchInput"){
     return;
@@ -76,8 +77,6 @@ async function init(){
   iconsRight = identifier.appendChild(createElementWithClass('div', 'iconsRight'));
   var infoImg = iconsRight.appendChild(createElementWithClass('img', 'logoIMG'));
   infoImg.setAttribute('src', 'https://img.icons8.com/ios-glyphs/30/000000/info--v1.png');
-/*   var settings = iconsRight.appendChild(createElementWithClass('img', 'settingsIcon'));
-  settings.setAttribute('src', 'https://img.icons8.com/ios-filled/30/000000/settings.png'); */
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
   //Page Info Part
@@ -181,7 +180,7 @@ async function init(){
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   console.log(htmlObject, currentSite, warningType, warningReason);
   if(warningReason == "blacklist") {
-    document.body.classList.add('warning');
+    document.body.classList.add('warning');//add "Warning" to the body element
     htmlObject.classList.add('warning');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.severe.blacklist[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.severe[language];
@@ -196,6 +195,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_green.svg');
   }
   if(warningType == "unknown") {
+    document.body.classList.add('unknown');//add "Warning" to the body element
     htmlObject.classList.add('unknown');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.unknown[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.unknown[language];
