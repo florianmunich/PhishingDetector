@@ -11,6 +11,11 @@ var safeSite;
 
 var language = "english"; //Default, can be overwritten by chrome storage
 
+function createElementWithClass(type, className) {
+    const element = document.createElement(type);
+    element.className = className;
+    return element;
+  }
 
 async function main(){
     await chrome.storage.sync.get('PDlanguage', function(items){
@@ -66,7 +71,6 @@ async function declareSites(){
     await getknownSites();
     phishingSites = allKnownSites.phishingSites;
     safeSites = allKnownSites.safeSites;
-    console.log(safeSites);
 }
 
 //Platziert das PD Icon neben allen übergebenen Feldern
@@ -99,15 +103,11 @@ async function inputPDIcon(pwElems) {
         else if(safeSite){newItemSVG.classList.add('safeSecurityLogo');}
         else {newItemSVG.classList.add('unknownSecurityLogo');}
 
-
-/*         var position = item.getBoundingClientRect();
-        newIcon.style.left = position.left + position.width + 'px';
-        newIcon.style.top = position.top + 10 + 'px'; */
-
         item.parentNode.appendChild(newIcon);
         iconAppended = newItemSVG;//document.getElementsByClassName('appendedSecurityLogo')[0];
 
         var container;
+        var belonging;
         
         iconAppended.addEventListener("mouseenter", async function(event) {
             if(!(container == undefined)){return;}
@@ -117,24 +117,46 @@ async function inputPDIcon(pwElems) {
             container.classList.add('hoverContainerOnHover');
             if(phishingSite){
                 warning("blacklist");
+                belonging = showBelonging(container, 'warning', '#FF6347');
             }
             var safeSite = await siteInSafe(currentSite);
             if(safeSite){
                 safe();
+                belonging = showBelonging(container, 'safe', '#3cb371');
             }
             if(!safeSite && !phishingSite){
                 unknown();
+                belonging = showBelonging(container, 'unknown', '#fbba2e');
             }
 
             document.body.addEventListener("click", function(event) {
                 if(container == undefined) {return;}
                 iconAppended.classList.remove('iconHovered');
                 container.remove();
+                belonging.remove();
                 container = undefined;
                 //container.classList.remove('hoverContainerOnHover');
             });
         });
     }
+}
+
+function showBelonging(container, warningType, color) {
+    var belongingObject = createElementWithClass('canvas', 'belongingObject ' + warningType);
+    belongingObject.width = document.body.clientWidth -1;
+    belongingObject.height = window.innerHeight;
+    document.body.appendChild(belongingObject);
+
+    var ctx = belongingObject.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(parseInt(container.style.left) + 300, parseInt(container.style.top) + 10);
+    ctx.lineTo(window.innerWidth - 250, 0);
+    ctx.lineTo(window.innerWidth - 250, 300);
+    ctx.lineTo(parseInt(container.style.left) + 300, parseInt(container.style.top) + 50);
+    ctx.fill();
+    
+    return belongingObject;
 }
 
 function buildInfoContainer(iconAppended){
