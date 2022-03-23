@@ -7,6 +7,6 @@
     ],
     "phishingSites": [
         {"url": "amazon.com"},
-        {"url": "https://www.amazon.de/ap/signin"}
+        {"url": "https://www.amazon.com/ap/signin"}
     ]
 }
