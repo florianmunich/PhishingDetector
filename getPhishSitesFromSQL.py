@@ -2,7 +2,7 @@ import json
 from urllib.request import urlopen
 import indexMendeleyPyArray
 
-filename = 'safeSites.json'
+filename = 'knownSites.json'
 
 try:
     jsonFile = open(filename)
@@ -35,17 +35,12 @@ def mendeleyData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs):
     i = 0
     for page in mendeleyArray:
         i += 1
-        #For testing only take first 500 lines
-        if(i==200): break
-        #if(i%10000 == 0): print(str(i) + " pages from Mendeley are done.")
         if(page[3] == 1):
-            #if(numberPhishs < 4): 
             url = page[1].split('/')[2]
             if(not(url in phishSitesArray)):
                 phishSitesArray += [url]
                 numberPhishs += 1
         else: 
-            #if(numberSafe < 4): 
             url = page[1].split('/')[2]
             if(not(url in safeSitesArray)):
                 safeSitesArray += [url]
@@ -88,11 +83,13 @@ def writeJsonFromArrays():
     textForJson += phishSites
     textForJson += ']\n}'
 
-    with open('safeSites.json', 'w') as f:
+    with open(filename, 'w') as f:
         f.write(textForJson)
 
 #Alte Daten abrufen
 safeSitesArray, phishSitesArray, numberSafe, numberPhishs = getOldData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs)
+numberOldPhishs = numberPhishs
+numberOldSafe = numberSafe
 
 print(str(numberPhishs) + " Phishing sites and " + str(numberSafe) + " safe sites loaded from old data.")
 
@@ -108,3 +105,4 @@ print(str(numberPhishs) + " Phishing sites and " + str(numberSafe) + " safe site
 writeJsonFromArrays()
 
 print("Wrote " + str(numberPhishs) + " Phishing sites and " + str(numberSafe) + " safe sites to json file!")
+print("These are " + str(numberPhishs - numberOldPhishs) + " new Phishing and " + str(numberSafe - numberOldSafe) + " new Safe Sites.")

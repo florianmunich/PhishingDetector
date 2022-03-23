@@ -1,4 +1,4 @@
-let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/safeSites.json';
+let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
 var allKnownSites;
 var phishingSites;
 var safeSites;
