@@ -267,8 +267,8 @@ texts = {
           "german": "Hintergrund einf&auml;rben"
         },
         "explanation": {
-          "english": "For detected malicious websites, additionally color background red",
-          "german": "Bei erkannten sch&auml;dlichen Webseiten Hintergrund zus&auml;tzlich rot einf&auml;rben"
+          "english": "For detected malicious websites: color background red",
+          "german": "Bei erkannten sch&auml;dlichen Webseiten: Hintergrund rot einf&auml;rben"
         }
       },
       "blockInputs": {

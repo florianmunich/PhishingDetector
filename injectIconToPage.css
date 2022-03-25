@@ -94,6 +94,7 @@
 
 .boxLowerPart {
     background-color: #F0F0F0;
+    color: black;
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
 }

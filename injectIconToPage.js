@@ -35,6 +35,14 @@ async function main(){
     }
     if(phishingSite){
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "blacklist"]}, function() {});
+
+        //Set Background color to red if enabled
+        chrome.storage.sync.get("PDsetBGColor", function(items){
+            enabled = items['PDsetBGColor'];
+            if(enabled)
+                document.body.style.backgroundColor = 'red';
+                //TODO: Wieder neutral setzen danach!!!
+        });
     }
     if(!phishingSite && !safeSite){
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
@@ -104,7 +112,7 @@ async function inputPDIcon(pwElems) {
         else {newItemSVG.classList.add('unknownSecurityLogo');}
 
         item.parentNode.appendChild(newIcon);
-        iconAppended = newItemSVG;//document.getElementsByClassName('appendedSecurityLogo')[0];
+        iconAppended = newItemSVG;
 
         var container;
         var belonging;
@@ -119,8 +127,7 @@ async function inputPDIcon(pwElems) {
                 warning("blacklist");
                 belonging = showBelonging(container, 'warning', '#FF6347');
             }
-            var safeSite = await siteInSafe(currentSite);
-            if(safeSite){
+            else if(safeSite){
                 safe();
                 belonging = showBelonging(container, 'safe', '#3cb371');
             }
@@ -135,7 +142,6 @@ async function inputPDIcon(pwElems) {
                 container.remove();
                 belonging.remove();
                 container = undefined;
-                //container.classList.remove('hoverContainerOnHover');
             });
         });
     }
@@ -145,7 +151,7 @@ function showBelonging(container, warningType, color) {
     var belongingObject = createElementWithClass('canvas', 'belongingObject ' + warningType);
     belongingObject.width = document.body.clientWidth -1;
     belongingObject.height = window.innerHeight;
-    document.body.appendChild(belongingObject);
+    //document.body.appendChild(belongingObject);
 
     var ctx = belongingObject.getContext('2d');
     ctx.fillStyle = color;
@@ -160,6 +166,7 @@ function showBelonging(container, warningType, color) {
 }
 
 function buildInfoContainer(iconAppended){
+    console.log(iconAppended);
     var container = document.createElement('div');
     container.setAttribute('class', 'hoverContainer');
     var hoverContainerBackground = document.createElement('div');
@@ -210,19 +217,22 @@ function appendTexts(rating, reason){
     recommendation.innerHTML = texts.texts.hoverBox.actionProposed[rating][language];
 }
 
+function appendLeaveButton(){
+    container = document.getElementsByClassName('boxLowerPart')[0];
+    container.removeChild(container.lastChild);
+    leaveButton = createElementWithClass('button', 'leaveButton');
+    leaveButton.setAttribute('onclick', 'window.location = "https://google.com"');
+    leaveButton.innerHTML = texts.texts.hoverBox.leaveButton[language];
+    container.appendChild(leaveButton);
+}
+
 //Erstellt alle Infos für den Fall einer Warnung
 function warning(reason){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextWarning');
     appendTexts("severe", reason);
+    appendLeaveButton();
 
-    //Set Background color to red if enabled
-    chrome.storage.sync.get("PDsetBGColor", function(items){
-        enabled = items['PDsetBGColor'];
-        if(enabled)
-            document.body.style.backgroundColor = 'red';
-            //TODO: Wieder neutral setzen danach!!!
-    });
 
 /*     var values = [currentSiteShort, "warning", reason];
     chrome.storage.sync.set({'PDcurrentSiteInfos': values}, function() {}); */
@@ -233,12 +243,6 @@ function safe(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextSafe');
     appendTexts("safe", "database");
-
-/*     reason = "whitelist";
-    var values = [currentSiteShort, "safe", reason];
-    chrome.storage.sync.set({key: values}, function() {
-        console.log('Data for popup is set to ' + values);
-    }); */
 }
 
 //Erstellt alle Infos für den Fall einer unbekannten Seite
@@ -336,7 +340,7 @@ var texts = {
             "actionProposed": {
                 "severe": {
                     "english": "Recommendation: Leave this page! Do not enter any personal data!",
-                    "german" : "Empfehlung: Verlassen Sie diese Seite! Geben Sie keine persönlichen Daten ein!"
+                    "german" : "Empfehlung: Geben Sie keine persönlichen Daten ein!"
                 },
                 "safe": {
                     "english": "You can enter your data here with no concerns.",
@@ -360,6 +364,10 @@ var texts = {
             "pageUnknown": {
                 "english": "We currently do not have information about this page.",
                 "german": "Wir haben derzeit keine Informationen über diese Seite."
+            },
+            "leaveButton": {
+                "english": "Leave page",
+                "german": "Seite verlassen"
             }
         },
         "settings": {
