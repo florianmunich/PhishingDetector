@@ -15,6 +15,7 @@ chrome.storage.sync.set({'PDsetBGColor': true}, function() {});
 chrome.storage.sync.set({'PDblockEntries': true}, function() {});
 chrome.storage.sync.set({'PDlanguage': "german"}, function() {});
 chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
+chrome.storage.sync.set({'PDStats': []}, function() {});
 
 var message = "testmessage";
 chrome.runtime.onMessage.addListener(
@@ -32,7 +33,6 @@ chrome.runtime.onMessage.addListener(
 
 async function getCurrentPage(){
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        currentWebsite = getCurrentPage();
         return tabs[0].url;
     });
 }
