@@ -11,6 +11,11 @@ var safeSite;
 
 var language = "english"; //Default, can be overwritten by chrome storage
 
+//Wartet eine gegebene Zeit in Millisekunden
+function sleep(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
 function createElementWithClass(type, className) {
     const element = document.createElement(type);
     element.className = className;
@@ -29,7 +34,6 @@ async function main(){
     phishingSite = await siteInSuspected(currentSite);
     safeSite = await siteInSafe(currentSite);
 
-    console.log("MainSafeSite: " + safeSite);
     if(safeSite){
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
     }
@@ -45,6 +49,8 @@ async function main(){
         });
     }
     if(!phishingSite && !safeSite){
+        console.log("VTT Necessary!");
+        getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
     }
 
@@ -61,11 +67,6 @@ chrome.storage.sync.get("PDactivationStatus", function(items){
         main()
 });
 
-//Wartet eine gegebene Zeit in Millisekunden
-function sleep(milliseconds) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds));
-}
-
 //Lädt die Liste der bekannten Seiten herunter
 async function getknownSites() {
     await fetch(url)
@@ -79,6 +80,30 @@ async function declareSites(){
     await getknownSites();
     phishingSites = allKnownSites.phishingSites;
     safeSites = allKnownSites.safeSites;
+}
+
+function getVirusTotalInfo(url = "https://google.com") {
+/*     console.log("VT Call initiated");
+    fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
+    console.log(fetchURL);
+
+    const options = {
+        method: 'GET',
+        headers: {
+        Accept: 'application/json',
+        'x-apikey': ''
+        }
+    };
+
+    var result;
+    
+    fetch(fetchURL, options)
+        .then(response => response.json())
+        .then(response => document.getElementsByClassName('content')[0].innerHTML = response)
+        .then(response => console.log(response))
+        .catch(err => console.error(err)); */
+    
+    return 0;
 }
 
 //Platziert das PD Icon neben allen übergebenen Feldern
@@ -103,8 +128,6 @@ async function inputPDIcon(pwElems) {
         );
         newIcon.appendChild(newItemSVG);
         newItemSVG.appendChild(newItemPath);
-        
-        console.log("safeSite: " + safeSite);
 
         //set safe status
         if(phishingSite){newItemSVG.classList.add('warningSecurityLogo');}
@@ -166,7 +189,6 @@ function showBelonging(container, warningType, color) {
 }
 
 function buildInfoContainer(iconAppended){
-    console.log(iconAppended);
     var container = document.createElement('div');
     container.setAttribute('class', 'hoverContainer');
     var hoverContainerBackground = document.createElement('div');
@@ -313,7 +335,7 @@ var texts = {
                     "german" : " ist wahrscheinlich sicher!"
                 },
                 "unknown": {
-                    "english": " is not known!",
+                    "english": " is not known to us!",
                     "german" : " kennen wir nicht!"
                 }
             },
@@ -322,12 +344,20 @@ var texts = {
                     "blacklist": {
                         "english": "Reason: We found the web page in a blacklist of phishing sites!",
                         "german" : "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!"
+                    },
+                    "VT": {
+                        "english": "Reason: We ran a virus scan of this page!",
+                        "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
                     }
                 },
                 "safe": {
                     "database": {
                         "english": "Reason: We found the site our database.",
                         "german" : "Grund: Wir haben die Seite in unserer Datenbank gefunden."
+                    },
+                    "VT": {
+                        "english": "Reason: We ran a virus scan of this page!",
+                        "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
                     }
                 },
                 "unknown": {
