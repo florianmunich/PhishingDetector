@@ -36,12 +36,12 @@ def mendeleyData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs):
     for page in mendeleyArray:
         i += 1
         if(page[3] == 1):
-            url = page[1].split('/')[2]
+            url = page[1]#.split('/')[2]
             if(not(url in phishSitesArray)):
                 phishSitesArray += [url]
                 numberPhishs += 1
         else: 
-            url = page[1].split('/')[2]
+            url = page[1]#.split('/')[2]
             if(not(url in safeSitesArray)):
                 safeSitesArray += [url]
                 numberSafe += 1
@@ -51,11 +51,31 @@ def openPhishData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs):
     targetURL = "https://openphish.com/feed.txt"
     data = urlopen(targetURL)
     for url in data:
-        url = url.decode().split('/')[2]
+        url = url.decode()#.split('/')[2]
+        url = url.split('\n')[0]
         if(not(url in phishSitesArray)):
             phishSitesArray += [url]
             numberPhishs += 1
     return safeSitesArray, phishSitesArray, numberSafe, numberPhishs
+
+def removeWhitelistFromBlacklist(safeSitesArray, phishSitesArray, numberSafe, numberPhishs):
+    for site in phishSitesArray:
+        if (site in safeSitesArray):
+            phishSitesArray.remove(site)
+            numberPhishs -= 1
+    return safeSitesArray, phishSitesArray, numberSafe, numberPhishs
+
+def removeDuplicats(safeSitesArray, phishSitesArray, numberSafe, numberPhishs):
+    cleanSafeSitesArray = []
+    cleanPhishSitesArray = []
+ 
+    for element in safeSitesArray:
+        if element not in cleanSafeSitesArray:
+            cleanSafeSitesArray.append(element)
+    for element in phishSitesArray:
+        if element not in cleanPhishSitesArray:
+            cleanPhishSitesArray.append(element)
+    return cleanSafeSitesArray, cleanPhishSitesArray, len(cleanSafeSitesArray), len(cleanPhishSitesArray)
 
 def writeJsonFromArrays():
     safeSites = ''
@@ -87,7 +107,7 @@ def writeJsonFromArrays():
         f.write(textForJson)
 
 #Alte Daten abrufen
-safeSitesArray, phishSitesArray, numberSafe, numberPhishs = getOldData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs)
+#safeSitesArray, phishSitesArray, numberSafe, numberPhishs = getOldData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs)
 numberOldPhishs = numberPhishs
 numberOldSafe = numberSafe
 
@@ -101,8 +121,14 @@ print(str(numberPhishs) + " Phishing sites and " + str(numberSafe) + " safe site
 safeSitesArray, phishSitesArray, numberSafe, numberPhishs = openPhishData(safeSitesArray, phishSitesArray, numberSafe, numberPhishs)
 print(str(numberPhishs) + " Phishing sites and " + str(numberSafe) + " safe sites in total after loading openPhish-Data.")
 
+#Whitelist Einträge aus Blacklist entfernen, es kommt vor dass die in Blacklist und Whitelist stehen
+safeSitesArray, phishSitesArray, numberSafe, numberPhishs = removeWhitelistFromBlacklist(safeSitesArray, phishSitesArray, numberSafe, numberPhishs)
+
+#Duplikate entfernen
+safeSitesArray, phishSitesArray, numberSafe, numberPhishs = removeDuplicats(safeSitesArray, phishSitesArray, numberSafe, numberPhishs)
+
 #Json schreiben
 writeJsonFromArrays()
 
 print("Wrote " + str(numberPhishs) + " Phishing sites and " + str(numberSafe) + " safe sites to json file!")
-print("These are " + str(numberPhishs - numberOldPhishs) + " new Phishing and " + str(numberSafe - numberOldSafe) + " new Safe Sites.")
+print("Removed duplicates.\nThese are " + str(numberPhishs - numberOldPhishs) + " new Phishing and " + str(numberSafe - numberOldSafe) + " new Safe Sites.")
