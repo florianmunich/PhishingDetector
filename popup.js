@@ -1,4 +1,7 @@
 var language = "english"; //Default, can be overwritten by chrome storage
+var safeSiteURL = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
+var phishingSites;
+var safeSites;
 
 function createElementWithClass(type, className) {
   const element = document.createElement(type);
@@ -50,14 +53,14 @@ async function handleSettingClick(event) {
   if(setting == "PDblockEntries") {
     await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
   }
-  await sleep(100);
+  await sleep(10);
   chrome.storage.sync.get(setting, function(items){
     console.log("Option set to: " + items[setting]);
   });
 }
 
 async function init(){
-
+  //await analyzePage();
   await chrome.storage.sync.get('PDlanguage', function(items){
     language = items['PDlanguage'];
   });
@@ -96,7 +99,7 @@ async function init(){
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
   //settings Switches
-  function addSetting(optionID, name, explanation){
+  async function addSetting(optionID, name, explanation){
     var container = createElementWithClass('div', "settingBox");
     container.setAttribute('id', optionID);
     var textsSetting = container.appendChild(createElementWithClass('span', 'settingInfos'));
@@ -108,6 +111,19 @@ async function init(){
     switchBoxInput = switchBox.appendChild(createElementWithClass('input', 'switchInput'));
     switchBoxInput.setAttribute('type', 'checkbox');
     switchBoxInput.checked = true;
+/*     if(optionID == "PDsetBGColor") {
+      await chrome.storage.sync.get(optionID, function(items){
+        switchBoxInput.checked = items[optionID];
+        switchBoxInput.classList.toggle('notApplicable');
+      });
+    }
+    if(optionID == "PDblockEntries") {
+      await chrome.storage.sync.get(optionID, function(items){
+        switchBoxInput.checked = items[optionID];
+        switchBoxInput.classList.toggle('notApplicable');
+      });
+    } */
+
     switchBox.appendChild(createElementWithClass('span', 'slider round'));
 
     switchBox.addEventListener("click", handleSettingClick);
@@ -117,17 +133,28 @@ async function init(){
   //Add options
   settingsBox = container.appendChild(createElementWithClass('div', 'settings'));
 
-  settingA = settingsBox.appendChild(addSetting('PDactivationStatus', texts.texts.settings.active.title[language], texts.texts.settings.active.explanation[language]));
-  settingB = settingsBox.appendChild(addSetting('PDsetBGColor', texts.texts.settings.backgroundIndication.title[language], texts.texts.settings.backgroundIndication.explanation[language]));
-  settingC = settingsBox.appendChild(addSetting('PDblockEntries', texts.texts.settings.blockInputs.title[language], texts.texts.settings.blockInputs.explanation[language]));
+  settingA = settingsBox.appendChild(await addSetting('PDactivationStatus', texts.texts.settings.active.title[language], texts.texts.settings.active.explanation[language]));
+  settingB = settingsBox.appendChild(await addSetting('PDsetBGColor', texts.texts.settings.backgroundIndication.title[language], texts.texts.settings.backgroundIndication.explanation[language]));
+  settingC = settingsBox.appendChild(await addSetting('PDblockEntries', texts.texts.settings.blockInputs.title[language], texts.texts.settings.blockInputs.explanation[language]));
   
   async function setProperty(setting){
+    var enabled;
     await chrome.storage.sync.get(setting.id, function(items){
       enabled = items[setting.id];
       if(!enabled){
+        console.log("not enabled");
         setting.lastChild.firstChild.checked = false;
+
+        //if general functionality is disabled, block other inputs
+        console.log(setting);
+        if(setting.id == "PDactivationStatus"){
+          //console.log(settingB);
+          settingB.firstChild.firstChild.classList.toggle('notApplicable');
+          settingC.firstChild.firstChild.classList.toggle('notApplicable');
+        }
       }
     });
+    
   }
   setProperty(settingA);
   setProperty(settingB);
@@ -173,6 +200,11 @@ async function init(){
   var infoText = infoBox.appendChild(createElementWithClass('div', 'infoText'));
   infoText.innerHTML = texts.texts.infoBox.infoText[language];
 
+  //Download Stats
+  var downloadStatsButton = container.appendChild(createElementWithClass('button', 'downloadStatsButton'));
+  downloadStatsButton.innerHTML = "Download Statistics";
+  //downloadStatsButton.addEventListener('click', downloadStats());
+
   //Add container to page
   document.body.appendChild(container);
 }
@@ -203,6 +235,101 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_yellow.svg');
   }
 }
+
+//Does not work, as current page is popup window
+async function analyzePage() {
+  var allKnownSites;
+
+  //Lädt die Liste der bekannten Seiten herunter
+  async function getknownSites() {
+    await fetch(safeSiteURL)
+    .then(res => res.json())
+    .then((out) => {allKnownSites = out;
+    });
+  }
+
+  //ruft Liste der bekannten Seiten ab und liest Phishing/Safe Seiten in Arrays aus
+  async function declareSites(){
+    await getknownSites();
+    phishingSites = allKnownSites.phishingSites;
+    safeSites = allKnownSites.safeSites;
+  }
+
+  //Checkt ob eine gegebene Seite in der Blacklist auftaucht
+  async function siteInSuspected(site){
+    for(let phishingSiteIndex in phishingSites){
+        phishingSite = phishingSites[phishingSiteIndex].url;
+        if (site.includes(phishingSite)){
+            console.log("Site\n" + site + "\n was suspected.");
+            return true;
+        }
+    }
+    return false;
+  }
+
+  //Checkt ob eine gegebene Seite in der Whitelist auftaucht
+  async function siteInSafe(site){
+    for(let safeSiteIndex in safeSites){
+        safeSite = "https://" + safeSites[safeSiteIndex].url;
+        if(site.includes(safeSite)){
+            console.log("Site\n" + site + "\n was considered safe.");
+            return true;
+        }
+    }
+    return false;
+  }
+
+  var currentSite = window.location.toString();
+  var currentSiteShort = window.location.toString().split('/')[2];
+
+  await declareSites();
+
+  //check site and write current information in Chrome storage
+  var phishingSite = await siteInSuspected(currentSite);
+  var safeSite = await siteInSafe(currentSite);
+
+  console.log("analyzze: " + currentSite + phishingSite + safeSite);
+
+  if(safeSite){
+    chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
+  }
+  if(phishingSite){
+      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "blacklist"]}, function() {});
+
+      //Set Background color to red if enabled
+      chrome.storage.sync.get("PDsetBGColor", function(items){
+          enabled = items['PDsetBGColor'];
+          if(enabled)
+              document.body.style.backgroundColor = 'red';
+              //TODO: Wieder neutral setzen danach!!!
+      });
+  }
+  if(!phishingSite && !safeSite){
+      console.log("VTT Necessary!");
+      //getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
+      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
+  }
+}
+
+async function downloadStats() {
+  filename = "PDStats";
+  statsArray = []
+  await chrome.storage.sync.get('PDStats', function(items){
+    statsArray = items['PDStats'];
+  });
+  await sleep(100);
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(statsArray));
+  element.setAttribute('download', filename);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+}
+
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
 texts = {
