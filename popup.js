@@ -111,18 +111,6 @@ async function init(){
     switchBoxInput = switchBox.appendChild(createElementWithClass('input', 'switchInput'));
     switchBoxInput.setAttribute('type', 'checkbox');
     switchBoxInput.checked = true;
-/*     if(optionID == "PDsetBGColor") {
-      await chrome.storage.sync.get(optionID, function(items){
-        switchBoxInput.checked = items[optionID];
-        switchBoxInput.classList.toggle('notApplicable');
-      });
-    }
-    if(optionID == "PDblockEntries") {
-      await chrome.storage.sync.get(optionID, function(items){
-        switchBoxInput.checked = items[optionID];
-        switchBoxInput.classList.toggle('notApplicable');
-      });
-    } */
 
     switchBox.appendChild(createElementWithClass('span', 'slider round'));
 
@@ -142,15 +130,14 @@ async function init(){
     await chrome.storage.sync.get(setting.id, function(items){
       enabled = items[setting.id];
       if(!enabled){
-        console.log("not enabled");
         setting.lastChild.firstChild.checked = false;
 
         //if general functionality is disabled, block other inputs
-        console.log(setting);
         if(setting.id == "PDactivationStatus"){
-          //console.log(settingB);
           settingB.firstChild.firstChild.classList.toggle('notApplicable');
+          settingB.lastChild.firstChild.disabled = true;
           settingC.firstChild.firstChild.classList.toggle('notApplicable');
+          settingC.lastChild.firstChild.disabled = true;
         }
       }
     });
