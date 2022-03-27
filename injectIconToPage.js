@@ -4,7 +4,9 @@ var phishingSites;
 var safeSites;
 var currentSite = window.location.toString();
 var currentSiteShort = window.location.toString().split('/')[2];
-
+var id;
+var siteStatus;
+var siteReason;
 //check site and write current information in Chrome storage
 var phishingSite;
 var safeSite;
@@ -36,6 +38,8 @@ async function main(){
 
     if(safeSite){
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
+        siteStatus = "safe";
+        siteReason = "whitelist";
     }
     if(phishingSite){
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "blacklist"]}, function() {});
@@ -47,16 +51,21 @@ async function main(){
                 document.body.style.backgroundColor = 'red';
                 //TODO: Wieder neutral setzen danach!!!
         });
+        siteStatus = "severe";
+        siteReason = "blacklist";
     }
     if(!phishingSite && !safeSite){
         console.log("VTT Necessary!");
         getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
+        siteStatus = "unknown";
+        siteReason = "notFound";
     }
 
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
         await inputPDIcon(pwElems);
+        writeStats("icon");
     }
 }
 
@@ -166,6 +175,7 @@ async function inputPDIcon(pwElems) {
                 belonging.remove();
                 container = undefined;
             });
+            writeStats("hover");
         });
     }
 }
@@ -244,6 +254,7 @@ function appendLeaveButton(){
     container.removeChild(container.lastChild);
     leaveButton = createElementWithClass('button', 'leaveButton');
     leaveButton.setAttribute('onclick', 'window.location = "https://google.com"');
+    leaveButton.setAttribute('onclick', 'writeStats("leavecklick")');
     leaveButton.innerHTML = texts.texts.hoverBox.leaveButton[language];
     container.appendChild(leaveButton);
 }
@@ -296,6 +307,18 @@ async function siteInSafe(site){
         }
     }
     return false;
+}
+
+async function writeStats(type) {
+    var statsArray = [];
+    await chrome.storage.sync.get('PDStats', function(items){
+        statsArray = items['PDStats'];
+    });
+    await sleep(1);
+    id = statsArray.length + 1;
+    statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
+    await sleep(1);
+    chrome.storage.sync.set({'PDStats': statsArray}, function() {});
 }
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
