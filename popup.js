@@ -2,6 +2,9 @@ var language = "english"; //Default, can be overwritten by chrome storage
 var safeSiteURL = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
 var phishingSites;
 var safeSites;
+var siteStatus;
+var siteReason;
+var currentSiteShort;
 
 function createElementWithClass(type, className) {
   const element = document.createElement(type);
@@ -45,13 +48,20 @@ async function handleSettingClick(event) {
     //Color the options in grey if they are disabled
     BGButton.firstChild.firstChild.classList.toggle('notApplicable');
     BEButton.firstChild.firstChild.classList.toggle('notApplicable');
-
   }
-  if(setting == "PDsetBGColor") {
-    await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
-  }
-  if(setting == "PDblockEntries") {
-    await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
+  else{
+    let general_function;
+    await chrome.storage.sync.get("PDactivationStatus", function(items){
+      general_function = items["PDactivationStatus"];
+    });
+    if(general_function){
+      if(setting == "PDsetBGColor") {
+        await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+      }
+      else if(setting == "PDblockEntries") {
+        await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
+      }
+    }
   }
   await sleep(10);
   chrome.storage.sync.get(setting, function(items){
@@ -94,6 +104,11 @@ async function init(){
   chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
     values = items['PDcurrentSiteInfos'];
     setIdentifierText(pageInfos, currentSite = values[0], warningType = values[1], warningReason = values[2]);
+
+    //set globals
+    currentSiteShort = values[0];
+    siteStatus = values[1];
+    siteReason = values [2];
   });
 
   container.appendChild(createElementWithClass('div', 'separatorLine'));
@@ -190,10 +205,12 @@ async function init(){
   //Download Stats
   var downloadStatsButton = container.appendChild(createElementWithClass('button', 'downloadStatsButton'));
   downloadStatsButton.innerHTML = "Download Statistics";
-  //downloadStatsButton.addEventListener('click', downloadStats());
+  downloadStatsButton.addEventListener('click', downloadStats());
 
   //Add container to page
   document.body.appendChild(container);
+
+  writeStats("popup");
 }
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
@@ -317,6 +334,19 @@ async function downloadStats() {
   document.body.removeChild(element);
 }
 
+async function writeStats(type) {
+  var statsArray = [];
+  await chrome.storage.sync.get('PDStats', function(items){
+      statsArray = items['PDStats'];
+  });
+  console.log(statsArray);
+  await sleep(1);
+  id = statsArray.length + 1;
+  statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
+  await sleep(1);
+  console.log(statsArray);
+  chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+}
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
 texts = {
