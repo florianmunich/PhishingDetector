@@ -21,7 +21,7 @@ chrome.storage.sync.set({'PDStats': []}, function() {});
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     console.log("VTT initiated: " + sender.tab.url);
-    if (request.VTTtoCheckURL === "VTTcheck"){
+/*     if (request.VTTtoCheckURL === "VTTcheck"){
       url = "https://amazon.com";
       url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2]
         fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
@@ -41,7 +41,8 @@ chrome.runtime.onMessage.addListener(
             .then(response => response.json())
             .then(response => sendResponse({VTTresult: response.data.attributes.last_analysis_stats}))
             .catch(err => console.log('Site did not respond with valid data. Probably never scanned before!'));
-    }
+    } */
+    sendResponse({VTTresult: "some test return"})
     return true;
   }
 );

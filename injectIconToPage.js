@@ -6,7 +6,7 @@ var currentSite = window.location.toString();
 var currentSiteShort = window.location.toString().split('/')[2];
 var id;
 var siteStatus;
-var siteReason;
+var siteReason = "noData";
 //check site and write current information in Chrome storage
 var phishingSite;
 var safeSite;
@@ -55,8 +55,7 @@ async function main(){
         siteReason = "blacklist";
     }
     if(!phishingSite && !safeSite){
-        console.log("VTT Necessary!");
-        await getVirusTotalInfo("url.com");
+        await getVirusTotalInfo("current page");
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
         siteStatus = "unknown";
         siteReason = "notFound";
@@ -117,18 +116,18 @@ async function declareSites(){
     safeSites = allKnownSites.safeSites;
 }
 
-async function getVirusTotalInfo(url = "https://google.com") {
-    console.log("VTT gestartet --> Sende Nachricht");
+async function getVirusTotalInfo(url) {
+    console.log("VTT query started");
 
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
         virusScan = response.VTTresult;
         console.log(virusScan);
-        totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
+/*         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
         positiveVotes = virusScan.harmless;
-        negativeVotes = virusScan.malicious + virusScan.suspicious;
-/*         totalVotes = 100;
+        negativeVotes = virusScan.malicious + virusScan.suspicious; */
+        totalVotes = 100;
         negativeVotes = 0;
-        positiveVotes = 10; */
+        positiveVotes = 10;
         if(totalVotes > 50) {
             console.log('virus scan valid');
             if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
@@ -143,6 +142,7 @@ async function getVirusTotalInfo(url = "https://google.com") {
                 phishingSite = false;
                 safeSite = true;
             }
+            siteReason = 'VTTScan';
         }
       });
     return;
@@ -189,7 +189,7 @@ async function inputPDIcon(pwElems) {
             iconAppended.classList.add('iconHovered');
             container.classList.add('hoverContainerOnHover');
             if(phishingSite){
-                warning("blacklist");
+                warning();
                 //belonging = showBelonging(container, 'warning', '#FF6347');
             }
             else if(safeSite){
@@ -293,10 +293,10 @@ function appendLeaveButton(){
 }
 
 //Erstellt alle Infos für den Fall einer Warnung
-function warning(reason){
+function warning(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextWarning');
-    appendTexts("severe", reason);
+    appendTexts("severe", siteReason);
     appendLeaveButton();
 
 
@@ -308,14 +308,14 @@ function warning(reason){
 function safe(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextSafe');
-    appendTexts("safe", "database");
+    appendTexts("safe", siteReason);
 }
 
 //Erstellt alle Infos für den Fall einer unbekannten Seite
 function unknown(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextUnknown');
-    appendTexts("unknown", "noData");
+    appendTexts("unknown", siteReason);
 }
 
 //Checkt ob eine gegebene Seite in der Blacklist auftaucht
@@ -401,7 +401,7 @@ var texts = {
                         "english": "Reason: We found the web page in a blacklist of phishing sites!",
                         "german" : "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!"
                     },
-                    "VT": {
+                    "VTTScan": {
                         "english": "Reason: We ran a virus scan of this page!",
                         "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
                     }
@@ -411,7 +411,7 @@ var texts = {
                         "english": "Reason: We found the site our database.",
                         "german" : "Grund: Wir haben die Seite in unserer Datenbank gefunden."
                     },
-                    "VT": {
+                    "VTTScan": {
                         "english": "Reason: We ran a virus scan of this page!",
                         "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
                     }
