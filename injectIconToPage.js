@@ -56,7 +56,7 @@ async function main(){
     }
     if(!phishingSite && !safeSite){
         console.log("VTT Necessary!");
-        getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
+        await getVirusTotalInfo("url.com");
         chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
         siteStatus = "unknown";
         siteReason = "notFound";
@@ -76,6 +76,32 @@ chrome.storage.sync.get("PDactivationStatus", function(items){
         main()
 });
 
+//Redo analysis if security information changes
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+    for(key in changes) {
+      if(key === 'PDcurrentSiteInfos') {
+        PDIcons = document.getElementsByClassName('PDIcon');
+        for (let PDIcon of PDIcons) {
+            if(phishingSite) {
+                PDIcon.firstChild.classList.add('warningSecurityLogo');
+                PDIcon.firstChild.classList.remove('safeSecurityLogo');
+                PDIcon.firstChild.classList.remove('unknownSecurityLogo');
+            }
+            else if(safeSite) {
+                PDIcon.firstChild.classList.remove('warningSecurityLogo');
+                PDIcon.firstChild.classList.add('safeSecurityLogo');
+                PDIcon.firstChild.classList.remove('unknownSecurityLogo');
+            }
+            else {
+                PDIcon.firstChild.classList.remove('warningSecurityLogo');
+                PDIcon.firstChild.classList.remove('safeSecurityLogo');
+                PDIcon.firstChild.classList.add('unknownSecurityLogo');
+            }
+        }
+      }
+    }
+  });
+
 //Lädt die Liste der bekannten Seiten herunter
 async function getknownSites() {
     await fetch(url)
@@ -91,28 +117,35 @@ async function declareSites(){
     safeSites = allKnownSites.safeSites;
 }
 
-function getVirusTotalInfo(url = "https://google.com") {
-/*     console.log("VT Call initiated");
-    fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
-    console.log(fetchURL);
+async function getVirusTotalInfo(url = "https://google.com") {
+    console.log("VTT gestartet --> Sende Nachricht");
 
-    const options = {
-        method: 'GET',
-        headers: {
-        Accept: 'application/json',
-        'x-apikey': ''
+    await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
+        virusScan = response.VTTresult;
+        console.log(virusScan);
+        totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
+        positiveVotes = virusScan.harmless;
+        negativeVotes = virusScan.malicious + virusScan.suspicious;
+/*         totalVotes = 100;
+        negativeVotes = 0;
+        positiveVotes = 10; */
+        if(totalVotes > 50) {
+            console.log('virus scan valid');
+            if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
+                chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "VTTScan"]}, function() {});
+                //console.log('Status set so severe');
+                phishingSite = true;
+                safeSite = false;
+            }
+            else {
+                chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "VTTScan"]}, function() {});
+                //console.log('Status set so safe');
+                phishingSite = false;
+                safeSite = true;
+            }
         }
-    };
-
-    var result;
-    
-    fetch(fetchURL, options)
-        .then(response => response.json())
-        .then(response => document.getElementsByClassName('content')[0].innerHTML = response)
-        .then(response => console.log(response))
-        .catch(err => console.error(err)); */
-    
-    return 0;
+      });
+    return;
 }
 
 //Platziert das PD Icon neben allen übergebenen Feldern
@@ -147,7 +180,7 @@ async function inputPDIcon(pwElems) {
         iconAppended = newItemSVG;
 
         var container;
-        var belonging;
+        //var belonging;
         
         iconAppended.addEventListener("mouseenter", async function(event) {
             if(!(container == undefined)){return;}
@@ -157,22 +190,22 @@ async function inputPDIcon(pwElems) {
             container.classList.add('hoverContainerOnHover');
             if(phishingSite){
                 warning("blacklist");
-                belonging = showBelonging(container, 'warning', '#FF6347');
+                //belonging = showBelonging(container, 'warning', '#FF6347');
             }
             else if(safeSite){
                 safe();
-                belonging = showBelonging(container, 'safe', '#3cb371');
+                //belonging = showBelonging(container, 'safe', '#3cb371');
             }
             if(!safeSite && !phishingSite){
                 unknown();
-                belonging = showBelonging(container, 'unknown', '#fbba2e');
+                //belonging = showBelonging(container, 'unknown', '#fbba2e');
             }
 
             document.body.addEventListener("click", function(event) {
                 if(container == undefined) {return;}
                 iconAppended.classList.remove('iconHovered');
                 container.remove();
-                belonging.remove();
+                //belonging.remove();
                 container = undefined;
             });
             writeStats("hover");
