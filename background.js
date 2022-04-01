@@ -47,6 +47,7 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
+chrome.action.setIcon({path: "/images/colors/logo_red_16.png"});
 
 async function getCurrentPage(){
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
