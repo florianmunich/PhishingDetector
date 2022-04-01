@@ -20,13 +20,23 @@ chrome.storage.sync.set({'PDStats': []}, function() {});
 //Listen for messages and run ap VTT Check if requested
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-    console.log("VTT initiated: " + sender.tab.url);
-/*     if (request.VTTtoCheckURL === "VTTcheck"){
-      url = "https://amazon.com";
+    console.log(request);
+    if(request.VTTtoCheckURL === "safeSite"){
+      console.log("green");
+      chrome.action.setIcon({path: "/images/colors/logo_green_16.png"});
+    }
+    else if(request.VTTtoCheckURL === "unknownSite"){
+      console.log("yellow");
+      chrome.action.setIcon({path: "/images/colors/logo_yellow_16.png"});
+    }
+    else if(request.VTTtoCheckURL === "warningSite"){
+      console.log("red");
+      chrome.action.setIcon({path: "/images/colors/logo_red_16.png"});
+    }
+    else if (request.VTTtoCheckURL === "VTTcheck"){
+      console.log("VTT initiated: " + sender.tab.url);
       url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2]
         fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
-        console.log(url);
-        console.log(fetchURL);
 
         const options = {
             method: 'GET',
@@ -40,14 +50,13 @@ chrome.runtime.onMessage.addListener(
         fetch(fetchURL, options)
             .then(response => response.json())
             .then(response => sendResponse({VTTresult: response.data.attributes.last_analysis_stats}))
-            .catch(err => console.log('Site did not respond with valid data. Probably never scanned before!'));
-    } */
-    sendResponse({VTTresult: "some test return"})
+            .catch(err => console.log('VTT did not respond with valid data. Probably never scanned before or quota done!'));
+    }
+    //sendResponse({VTTresult: "some test return"})
     return true;
   }
 );
 
-chrome.action.setIcon({path: "/images/colors/logo_red_16.png"});
 
 async function getCurrentPage(){
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {

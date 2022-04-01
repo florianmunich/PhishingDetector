@@ -77,6 +77,7 @@ chrome.storage.sync.get("PDactivationStatus", function(items){
 
 //Redo analysis if security information changes
 chrome.storage.onChanged.addListener(function(changes, namespace) {
+    console.log(changes);
     for(key in changes) {
       if(key === 'PDcurrentSiteInfos') {
         PDIcons = document.getElementsByClassName('PDIcon');
@@ -85,16 +86,19 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
                 PDIcon.firstChild.classList.add('warningSecurityLogo');
                 PDIcon.firstChild.classList.remove('safeSecurityLogo');
                 PDIcon.firstChild.classList.remove('unknownSecurityLogo');
+                chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
             }
             else if(safeSite) {
                 PDIcon.firstChild.classList.remove('warningSecurityLogo');
                 PDIcon.firstChild.classList.add('safeSecurityLogo');
                 PDIcon.firstChild.classList.remove('unknownSecurityLogo');
+                chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
             }
             else {
                 PDIcon.firstChild.classList.remove('warningSecurityLogo');
                 PDIcon.firstChild.classList.remove('safeSecurityLogo');
                 PDIcon.firstChild.classList.add('unknownSecurityLogo');
+                chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
             }
         }
       }
@@ -122,12 +126,12 @@ async function getVirusTotalInfo(url) {
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
         virusScan = response.VTTresult;
         console.log(virusScan);
-/*         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
+         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
         positiveVotes = virusScan.harmless;
-        negativeVotes = virusScan.malicious + virusScan.suspicious; */
-        totalVotes = 100;
-        negativeVotes = 0;
-        positiveVotes = 10;
+        negativeVotes = virusScan.malicious + virusScan.suspicious;
+/*         totalVotes = 100;
+        negativeVotes = 20;
+        positiveVotes = 10; */
         if(totalVotes > 50) {
             console.log('virus scan valid');
             if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
@@ -273,6 +277,7 @@ function buildInfoContainer(iconAppended){
 
 //Schreibt die Texte je nach Fall aus der json in die HoverBox
 function appendTexts(rating, reason){
+    console.log(rating, reason);
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
     var recommendation = document.getElementsByClassName('recommendation')[0];
@@ -420,6 +425,10 @@ var texts = {
                     "noData": {
                         "english": "Reason: We could not find the site in our databases.",
                         "german" : "Grund: Wir konnten die Seite nicht in unseren Datenbanken finden."
+                    },
+                    "notFound": {
+                        "english": "Reason: The site is not in our databases and no virus scan was performed so far.",
+                        "german" : "Grund: Die Seite ist nicht in unseren Datenbanken und es sie wurde bisher nicht gescannt."
                     }
                 }
             },

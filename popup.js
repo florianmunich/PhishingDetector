@@ -84,7 +84,7 @@ async function init(){
   var identifier = container.appendChild(createElementWithClass('div', 'identifier'));
   var logo = identifier.appendChild(createElementWithClass('div', 'logo'));
   var newItemIMG = logo.appendChild(createElementWithClass('img', 'logoSVG'));
-  newItemIMG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon.svg');
+  newItemIMG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon.svg');
   var nameExtension = identifier.appendChild(createElementWithClass('div', 'name'));
   nameExtension.innerHTML = 'Phishing Detector';
   iconsRight = identifier.appendChild(createElementWithClass('div', 'iconsRight'));
@@ -97,7 +97,7 @@ async function init(){
   var currentPageText = pageInfos.appendChild(createElementWithClass('div', 'currentPageText'));
   var currentPageColored = pageInfos.appendChild(createElementWithClass('div', 'currentPageColored'));
   var currentPageIMG = currentPageColored.appendChild(createElementWithClass('img', 'currentPageIMG'));
-  currentPageIMG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon.svg');
+  currentPageIMG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon.svg');
   var currentPageShortIndication = currentPageColored.appendChild(createElementWithClass('div', 'currentPageShortIndication'));
   var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
   currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
@@ -221,14 +221,14 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.severe.blacklist[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.severe[language];
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
-    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_red.svg');
+    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_red.svg');
   }
   if(warningReason == "whitelist") {
     htmlObject.classList.add('safe');
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.safe.whitelist[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.safe[language];
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
-    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_green.svg');
+    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_green.svg');
   }
   if(warningType == "unknown") {
     document.body.classList.add('unknown');//add "Warning" to the body element
@@ -236,7 +236,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.unknown[language];
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.unknown[language];
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
-    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/PDIcon_yellow.svg');
+    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_yellow.svg');
   }
 }
 
