@@ -102,17 +102,20 @@ async function init(){
   var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
   currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
   await chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabURL"}, function(response) {
-    console.log(response);
+    //console.log(response);
     currentSiteShort = response.currentURL;
     chrome.storage.sync.get('PDopenPageInfos', function(items){
       knownSites = items['PDopenPageInfos'];
+      console.log(knownSites);
       for (site of knownSites){
         if(site[0] == currentSiteShort){
+          console.log(pageInfos, currentSite = currentSiteShort, warningType = site[1], warningReason = site[2]);
           setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = site[1], warningReason = site[2]);
           //set globals
           //currentSiteShort = site[0];
           siteStatus = site[1];
           siteReason = site [2];
+          break;
         }
       }
     });
@@ -231,10 +234,10 @@ async function init(){
 }
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
-  console.log(htmlObject, currentSite, warningType, warningReason);
+  //console.log(htmlObject, currentSite, warningType, warningReason);
   htmlObject.classList.add(warningType);
   document.body.classList.add(warningType);
-  console.log(warningType, warningReason);
+  //console.log(warningType, warningReason);
   htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification[warningType][warningReason][language];
   htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication[warningType][language];
   var logoSVG = document.getElementsByClassName('currentPageIMG')[0];

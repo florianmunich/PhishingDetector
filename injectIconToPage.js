@@ -25,6 +25,7 @@ function createElementWithClass(type, className) {
   }
 
 async function main(){
+    console.log("PD: Site Scan initiated!");
     await chrome.storage.sync.get('PDlanguage', function(items){
         language = items['PDlanguage'];
     });
@@ -33,8 +34,28 @@ async function main(){
     await declareSites();
 
     //check site and write current information in Chrome storage
+/*     dbCheckNeeded = true;
+    await chrome.storage.sync.get("PDopenPageInfos", function(items){
+        infoArray = items['PDopenPageInfos'];
+        for (site of infoArray){
+            if(site[0] == currentSiteShort){
+                console.log(site);
+                if(site[1] == 'safe'){
+                    warningSite = false;
+                    safeSite = true;
+                    console.log(warningSite, safeSite);
+                }
+                if(site[1] == 'warning'){
+                    warningSite = true;
+                    safeSite = false;
+                }
+                break;
+            }
+        }
+    }); */
     warningSite = await siteInSuspected(currentSite);
     safeSite = await siteInSafe(currentSite);
+/*     console.log(warningSite, safeSite); */
 
     //Schauen ob schon was erkannt wurde, und wenn ja erst VTT ausfuehren
     if(!warningSite && !safeSite){
@@ -54,19 +75,20 @@ async function main(){
         chrome.storage.sync.get("PDopenPageInfos", function(items){
             infoArray = items['PDopenPageInfos'];
             if(infoArray.length>100){infoArray.pop()}
-            infoArray = [[currentSiteShort, "safe", "whitelist"]].concat(infoArray);
+            console.log(SiteReason);
+            infoArray = [[currentSiteShort, "safe", siteReason]].concat(infoArray);
             chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
         });
         //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
         siteStatus = "safe";
-        siteReason = "whitelist";
+        
     }
     if(warningSite){
         console.log("warning site!");
         chrome.storage.sync.get("PDopenPageInfos", function(items){
             infoArray = items['PDopenPageInfos'];
             if(infoArray.length>100){infoArray.pop()}
-            infoArray = [[currentSiteShort, "warning", "blacklist"]].concat(infoArray);
+            infoArray = [[currentSiteShort, "warning", siteReason]].concat(infoArray);
             chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
         });
         //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
@@ -80,7 +102,7 @@ async function main(){
                 //TODO: Wieder neutral setzen danach!!!
         });
         siteStatus = "warning";
-        siteReason = "blacklist";
+        
     }
 
     var pwElems = document.querySelectorAll('input[type=password]');
@@ -101,7 +123,7 @@ chrome.storage.sync.get("PDactivationStatus", function(items){
 chrome.storage.onChanged.addListener(function(changes, namespace) {
     for(key in changes) {
       if(key === 'PDopenPageInfos') {
-        console.log("change in PD status detected!");
+        //console.log("change in PD status detected!");
         PDIcons = document.getElementsByClassName('PDIcon');
         if(warningSite){
             chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
@@ -148,22 +170,34 @@ async function declareSites(){
 
 async function getVirusTotalInfo(url) {
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
+        console.log(response.VTTresult);
         virusScan = response.VTTresult;
-        console.log(virusScan);
         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
         positiveVotes = virusScan.harmless;
         negativeVotes = virusScan.malicious + virusScan.suspicious;
-/*         totalVotes = 100;
+/*          totalVotes = 100;
         negativeVotes = 20;
         positiveVotes = 10; */
         if(totalVotes > 50) {
             if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
-                chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "VTTScan"]}, function() {});
+                console.log("visus scan: warning");
+                chrome.storage.sync.get("PDopenPageInfos", function(items){
+                    infoArray = items['PDopenPageInfos'];
+                    if(infoArray.length>100){infoArray.pop()}
+                    infoArray = [[currentSiteShort, "warning", "VTTScan"]].concat(infoArray);
+                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                });
                 warningSite = true;
                 safeSite = false;
             }
             else {
-                chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "VTTScan"]}, function() {});
+                console.log("visus scan: safe");
+                chrome.storage.sync.get("PDopenPageInfos", function(items){
+                    infoArray = items['PDopenPageInfos'];
+                    if(infoArray.length>100){infoArray.pop()}
+                    infoArray = [[currentSiteShort, "safe", "VTTScan"]].concat(infoArray);
+                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                });
                 warningSite = false;
                 safeSite = true;
             }
@@ -349,6 +383,7 @@ async function siteInSuspected(site){
     for(let warningSiteIndex in warningSites){
         warningSite = warningSites[warningSiteIndex].url;
         if (site.includes(warningSite)){
+            siteReason = "blacklist";
             console.log("Site\n" + site + "\n was suspected.");
             return true;
         }
@@ -361,6 +396,7 @@ async function siteInSafe(site){
     for(let safeSiteIndex in safeSites){
         safeSite = "https://" + safeSites[safeSiteIndex].url;
         if(site.includes(safeSite)){
+            siteReason = "whitelist";
             console.log("Site\n" + site + "\n was considered safe.");
             return true;
         }

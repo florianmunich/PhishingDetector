@@ -21,7 +21,7 @@ chrome.storage.sync.set({'PDopenPageInfos': []}, function() {});
 //Listen for messages and run ap VTT Check if requested
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-    console.log(request.VTTtoCheckURL);
+    //console.log(request.VTTtoCheckURL);
     if(request.VTTtoCheckURL === "safeSite"){
       chrome.action.setIcon({path: "/images/colors/logo_green_16.png", tabId: sender.tab.id});
     }
@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener(
       chrome.action.setBadgeText({text: '!!', tabId: sender.tab.id});
       chrome.action.setBadgeBackgroundColor({color: [255,0,0,255], tabId: sender.tab.id});
     }
-    else if (request.VTTtoCheckURL === "NOUSE VTTcheck"){
+    else if (request.VTTtoCheckURL === "VTTcheck"){
       console.log("VTT initiated: " + sender.tab.url);
       url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2]
       //url = "https://google.com";
