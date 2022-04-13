@@ -101,15 +101,32 @@ async function init(){
   var currentPageShortIndication = currentPageColored.appendChild(createElementWithClass('div', 'currentPageShortIndication'));
   var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
   currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
-  chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
+  await chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabURL"}, function(response) {
+    console.log(response);
+    currentSiteShort = response.currentURL;
+    chrome.storage.sync.get('PDopenPageInfos', function(items){
+      knownSites = items['PDopenPageInfos'];
+      for (site of knownSites){
+        if(site[0] == currentSiteShort){
+          setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = site[1], warningReason = site[2]);
+          //set globals
+          //currentSiteShort = site[0];
+          siteStatus = site[1];
+          siteReason = site [2];
+        }
+      }
+    });
+  });
+/*   chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
     values = items['PDcurrentSiteInfos'];
+    console.log(values);
     setIdentifierText(pageInfos, currentSite = values[0], warningType = values[1], warningReason = values[2]);
 
     //set globals
     currentSiteShort = values[0];
     siteStatus = values[1];
     siteReason = values [2];
-  });
+  }); */
 
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
@@ -215,11 +232,24 @@ async function init(){
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   console.log(htmlObject, currentSite, warningType, warningReason);
-  if(warningReason == "blacklist") {
+  htmlObject.classList.add(warningType);
+  document.body.classList.add(warningType);
+  console.log(warningType, warningReason);
+  htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification[warningType][warningReason][language];
+  htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication[warningType][language];
+  var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
+  switch (warningType) {
+    case 'warning': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_red.svg'); break;
+    case 'unknown': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_yellow.svg'); break;
+    case 'safe': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_green.svg'); break;
+  }
+
+  //Not needed anymore, handled in the upper part
+/*   if(warningReason == "warning") {
     document.body.classList.add('warning');//add "Warning" to the body element
     htmlObject.classList.add('warning');
-    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.severe.blacklist[language];
-    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.severe[language];
+    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.warning.blacklist[language];
+    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.warning[language];
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
     logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_red.svg');
   }
@@ -237,7 +267,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.unknown[language];
     var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
     logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_yellow.svg');
-  }
+  } */
 }
 
 //Does not work, as current page is popup window
@@ -298,7 +328,7 @@ async function analyzePage() {
     chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
   }
   if(phishingSite){
-      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "blacklist"]}, function() {});
+      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
 
       //Set Background color to red if enabled
       chrome.storage.sync.get("PDsetBGColor", function(items){
@@ -311,7 +341,7 @@ async function analyzePage() {
   if(!phishingSite && !safeSite){
       console.log("VTT Necessary!");
       //getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
-      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
+      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
   }
 }
 
@@ -329,7 +359,7 @@ async function downloadStats() {
   element.style.display = 'none';
   document.body.appendChild(element);
 
-  element.click();
+  //element.click();
 
   document.body.removeChild(element);
 }
@@ -339,12 +369,12 @@ async function writeStats(type) {
   await chrome.storage.sync.get('PDStats', function(items){
       statsArray = items['PDStats'];
   });
-  console.log(statsArray);
+  //console.log(statsArray);
   await sleep(1);
   id = statsArray.length + 1;
   statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
   await sleep(1);
-  console.log(statsArray);
+  //console.log(statsArray);
   chrome.storage.sync.set({'PDStats': statsArray}, function() {});
 }
 
@@ -362,7 +392,7 @@ texts = {
         "german": "AKTUELLE SEITE"
       },
       "shortIndication": {
-        "severe": {
+        "warning": {
           "english": "Fradulent Site",
           "german": "Sch&auml;dliche Seite"
         },
@@ -376,21 +406,35 @@ texts = {
         }
       },
       "justification": {
-        "severe": {
+        "warning": {
           "blacklist": {
             "english": " we found in our database of known fradulent sites. Do NOT enter any data here, the operator of the site is a fraudster.",
             "german": " haben wir in unserer Datenbank sch&auml;dlicher Webseiten gefunden. Geben Sie hier KEINE Daten ein, da der Betreiber der Seite ein Betr&uuml;ger ist."
           },
+          "VTTScan": {
+            "english": " was found unsafe by running a virus scan!",
+            "german" : " wurde nach Durchf&uuml;hren von Virenscans als unsicher befunden!"
+        }
         },
         "safe": {
           "whitelist": {
             "english": " we found in our database of safe sites. You can enter your data here without concerns.",
             "german": " haben wir in unserer Datenbank sicherer Webseiten gefunden. Sie k&ouml;nnen Ihre Daten hier ohne Bedenken eingeben."
+          },
+          "VTTScan": {
+            "english": " was found safe by running a virus scan!",
+            "german" : " wurde nach Durchf&uuml;hren von Virenscans als sicher befunden!"
           }
         },
         "unknown": {
-          "english": " we did NOT find in our databases. Be careful when entering data here!",
-          "german": " haben wir NICHT in unseren Datenbanken gefunden. Seien Sie vorsichtig, wenn Sie hier Daten eingeben!"
+          "noList": {
+            "english": " we could not find in our databases. Be careful when entering data here.",
+            "german": " haben wir nicht in unserer Datenbank gefunden. Seien Sie vorsichtig, wenn Sie hier Daten eingeben."
+          },
+          "noScan": {
+            "english": " is neither in our database nor a virus scan was performed so far. Be careful when entering data here.",
+            "german" : " haben wir nicht in unserer Datenbank gefunden, und bisher wurde auch kein Virenscan durchgef&uuml;hrt. Seien Sie vorsichtig, wenn Sie hier Daten eingeben."
+          }
         }
       }
     },

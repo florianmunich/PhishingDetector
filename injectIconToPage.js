@@ -1,6 +1,6 @@
 let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
 var allKnownSites;
-var phishingSites;
+var warningSites;
 var safeSites;
 var currentSite = window.location.toString();
 var currentSiteShort = window.location.toString().split('/')[2];
@@ -8,7 +8,7 @@ var id;
 var siteStatus;
 var siteReason = "noData";
 //check site and write current information in Chrome storage
-var phishingSite;
+var warningSite;
 var safeSite;
 
 var language = "english"; //Default, can be overwritten by chrome storage
@@ -33,32 +33,54 @@ async function main(){
     await declareSites();
 
     //check site and write current information in Chrome storage
-    phishingSite = await siteInSuspected(currentSite);
+    warningSite = await siteInSuspected(currentSite);
     safeSite = await siteInSafe(currentSite);
 
+    //Schauen ob schon was erkannt wurde, und wenn ja erst VTT ausfuehren
+    if(!warningSite && !safeSite){
+        chrome.storage.sync.get("PDopenPageInfos", function(items){
+            infoArray = items['PDopenPageInfos'];
+            if(infoArray.length>100){infoArray.pop()}
+            infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
+            chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+        });
+        //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
+        siteStatus = "unknown";
+        siteReason = "noScan";
+        getVirusTotalInfo("current page");
+    }
+
     if(safeSite){
-        chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
+        chrome.storage.sync.get("PDopenPageInfos", function(items){
+            infoArray = items['PDopenPageInfos'];
+            if(infoArray.length>100){infoArray.pop()}
+            infoArray = [[currentSiteShort, "safe", "whitelist"]].concat(infoArray);
+            chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+        });
+        //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
         siteStatus = "safe";
         siteReason = "whitelist";
     }
-    if(phishingSite){
-        chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "blacklist"]}, function() {});
+    if(warningSite){
+        console.log("warning site!");
+        chrome.storage.sync.get("PDopenPageInfos", function(items){
+            infoArray = items['PDopenPageInfos'];
+            if(infoArray.length>100){infoArray.pop()}
+            infoArray = [[currentSiteShort, "warning", "blacklist"]].concat(infoArray);
+            chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+        });
+        //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
 
         //Set Background color to red if enabled
         chrome.storage.sync.get("PDsetBGColor", function(items){
             enabled = items['PDsetBGColor'];
+            console.log(enabled);
             if(enabled)
                 document.body.style.backgroundColor = 'red';
                 //TODO: Wieder neutral setzen danach!!!
         });
-        siteStatus = "severe";
+        siteStatus = "warning";
         siteReason = "blacklist";
-    }
-    if(!phishingSite && !safeSite){
-        await getVirusTotalInfo("current page");
-        chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "notFound"]}, function() {});
-        siteStatus = "unknown";
-        siteReason = "notFound";
     }
 
     var pwElems = document.querySelectorAll('input[type=password]');
@@ -77,28 +99,32 @@ chrome.storage.sync.get("PDactivationStatus", function(items){
 
 //Redo analysis if security information changes
 chrome.storage.onChanged.addListener(function(changes, namespace) {
-    console.log(changes);
     for(key in changes) {
-      if(key === 'PDcurrentSiteInfos') {
+      if(key === 'PDopenPageInfos') {
+        console.log("change in PD status detected!");
         PDIcons = document.getElementsByClassName('PDIcon');
-        for (let PDIcon of PDIcons) {
-            if(phishingSite) {
+        if(warningSite){
+            chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
+            for (let PDIcon of PDIcons) {
                 PDIcon.firstChild.classList.add('warningSecurityLogo');
                 PDIcon.firstChild.classList.remove('safeSecurityLogo');
                 PDIcon.firstChild.classList.remove('unknownSecurityLogo');
-                chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
             }
-            else if(safeSite) {
+        }
+        else if(safeSite){
+            chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
+            for (let PDIcon of PDIcons) {
                 PDIcon.firstChild.classList.remove('warningSecurityLogo');
                 PDIcon.firstChild.classList.add('safeSecurityLogo');
                 PDIcon.firstChild.classList.remove('unknownSecurityLogo');
-                chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
             }
-            else {
+        }
+        else {
+            chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
+            for (let PDIcon of PDIcons) {
                 PDIcon.firstChild.classList.remove('warningSecurityLogo');
                 PDIcon.firstChild.classList.remove('safeSecurityLogo');
                 PDIcon.firstChild.classList.add('unknownSecurityLogo');
-                chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
             }
         }
       }
@@ -116,34 +142,29 @@ async function getknownSites() {
 //ruft Liste der bekannten Seiten ab und liest Phishing/Safe Seiten in Arrays aus
 async function declareSites(){
     await getknownSites();
-    phishingSites = allKnownSites.phishingSites;
+    warningSites = allKnownSites.warningSites;
     safeSites = allKnownSites.safeSites;
 }
 
 async function getVirusTotalInfo(url) {
-    console.log("VTT query started");
-
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
         virusScan = response.VTTresult;
         console.log(virusScan);
-         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
+        totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
         positiveVotes = virusScan.harmless;
         negativeVotes = virusScan.malicious + virusScan.suspicious;
 /*         totalVotes = 100;
         negativeVotes = 20;
         positiveVotes = 10; */
         if(totalVotes > 50) {
-            console.log('virus scan valid');
             if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
-                chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "severe", "VTTScan"]}, function() {});
-                //console.log('Status set so severe');
-                phishingSite = true;
+                chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "VTTScan"]}, function() {});
+                warningSite = true;
                 safeSite = false;
             }
             else {
                 chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "VTTScan"]}, function() {});
-                //console.log('Status set so safe');
-                phishingSite = false;
+                warningSite = false;
                 safeSite = true;
             }
             siteReason = 'VTTScan';
@@ -176,7 +197,7 @@ async function inputPDIcon(pwElems) {
         newItemSVG.appendChild(newItemPath);
 
         //set safe status
-        if(phishingSite){newItemSVG.classList.add('warningSecurityLogo');}
+        if(warningSite){newItemSVG.classList.add('warningSecurityLogo');}
         else if(safeSite){newItemSVG.classList.add('safeSecurityLogo');}
         else {newItemSVG.classList.add('unknownSecurityLogo');}
 
@@ -192,7 +213,7 @@ async function inputPDIcon(pwElems) {
             console.log("hover");
             iconAppended.classList.add('iconHovered');
             container.classList.add('hoverContainerOnHover');
-            if(phishingSite){
+            if(warningSite){
                 warning();
                 //belonging = showBelonging(container, 'warning', '#FF6347');
             }
@@ -200,7 +221,7 @@ async function inputPDIcon(pwElems) {
                 safe();
                 //belonging = showBelonging(container, 'safe', '#3cb371');
             }
-            if(!safeSite && !phishingSite){
+            if(!safeSite && !warningSite){
                 unknown();
                 //belonging = showBelonging(container, 'unknown', '#fbba2e');
             }
@@ -301,7 +322,7 @@ function appendLeaveButton(){
 function warning(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextWarning');
-    appendTexts("severe", siteReason);
+    appendTexts("warning", siteReason);
     appendLeaveButton();
 
 
@@ -325,9 +346,9 @@ function unknown(){
 
 //Checkt ob eine gegebene Seite in der Blacklist auftaucht
 async function siteInSuspected(site){
-    for(let phishingSiteIndex in phishingSites){
-        phishingSite = phishingSites[phishingSiteIndex].url;
-        if (site.includes(phishingSite)){
+    for(let warningSiteIndex in warningSites){
+        warningSite = warningSites[warningSiteIndex].url;
+        if (site.includes(warningSite)){
             console.log("Site\n" + site + "\n was suspected.");
             return true;
         }
@@ -369,7 +390,7 @@ var texts = {
     "texts": {
         "hoverBox": {
             "warningType": {
-                "severe": {
+                "warning": {
                     "english": "Warning",
                     "german" : "Warnung"
                 },
@@ -387,7 +408,7 @@ var texts = {
                 }
             },
             "warningText": {
-                "severe": {
+                "warning": {
                         "english": " is probably  NOT safe!",
                         "german" : " ist wahrscheinlich  NICHT sicher!"
                 },
@@ -401,7 +422,7 @@ var texts = {
                 }
             },
             "warningReason": {
-                "severe": {
+                "warning": {
                     "blacklist": {
                         "english": "Reason: We found the web page in a blacklist of phishing sites!",
                         "german" : "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!"
@@ -426,14 +447,14 @@ var texts = {
                         "english": "Reason: We could not find the site in our databases.",
                         "german" : "Grund: Wir konnten die Seite nicht in unseren Datenbanken finden."
                     },
-                    "notFound": {
+                    "noScan": {
                         "english": "Reason: The site is not in our databases and no virus scan was performed so far.",
                         "german" : "Grund: Die Seite ist nicht in unseren Datenbanken und es sie wurde bisher nicht gescannt."
                     }
                 }
             },
             "actionProposed": {
-                "severe": {
+                "warning": {
                     "english": "Recommendation: Leave this page! Do not enter any personal data!",
                     "german" : "Empfehlung: Geben Sie keine persönlichen Daten ein!"
                 },

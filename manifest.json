@@ -13,7 +13,7 @@
         "css": ["injectIconToPage.css"]
       }
     ],
-    "permissions": ["tabs", "activeTab", "storage", "activeTab", "scripting"],
+    "permissions": ["background", "tabs", "activeTab", "storage", "activeTab", "scripting"],
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
