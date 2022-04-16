@@ -51,19 +51,20 @@ async function handleSettingClick(event) {
   }
   else{
     let general_function;
-    await chrome.storage.sync.get("PDactivationStatus", function(items){
+    chrome.storage.sync.get("PDactivationStatus", function(items){
       general_function = items["PDactivationStatus"];
+      if(general_function){
+        if(setting == "PDsetBGColor") {
+          console.log("TOSET: ", currentSettingStatus);
+          chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+        }
+        else if(setting == "PDblockEntries") {
+          chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
+        }
+      }
     });
-    if(general_function){
-      if(setting == "PDsetBGColor") {
-        await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
-      }
-      else if(setting == "PDblockEntries") {
-        await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
-      }
-    }
   }
-  await sleep(10);
+  await sleep(100);
   chrome.storage.sync.get(setting, function(items){
     console.log("Option set to: " + items[setting]);
   });
