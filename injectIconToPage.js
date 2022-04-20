@@ -33,52 +33,32 @@ async function main(){
 
     await declareSites();
 
-    //check site and write current information in Chrome storage
-/*     dbCheckNeeded = true;
-    await chrome.storage.sync.get("PDopenPageInfos", function(items){
-        infoArray = items['PDopenPageInfos'];
-        for (site of infoArray){
-            if(site[0] == currentSiteShort){
-                console.log(site);
-                if(site[1] == 'safe'){
-                    warningSite = false;
-                    safeSite = true;
-                    console.log(warningSite, safeSite);
-                }
-                if(site[1] == 'warning'){
-                    warningSite = true;
-                    safeSite = false;
-                }
-                break;
-            }
-        }
-    }); */
     warningSite = await siteInSuspected(currentSite);
     safeSite = await siteInSafe(currentSite);
-/*     console.log(warningSite, safeSite); */
+    //console.log(warningSite, safeSite);
 
-    function checkSafe(){
+    function processStatus(writeStatus){
         if(safeSite){
             chrome.storage.sync.get("PDopenPageInfos", function(items){
                 infoArray = items['PDopenPageInfos'];
                 if(infoArray.length>100){infoArray.pop()}
-                infoArray = [[currentSiteShort, "safe", siteReason]].concat(infoArray);
-                chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                infoArray = [[currentSiteShort, "safe", "whitelist"]].concat(infoArray);
+                if(writeStatus){
+                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                }
             });
-            //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
             siteStatus = "safe";
         }
-    }
-    function checkWarning() {
         if(warningSite){
             console.log("warning site!");
             chrome.storage.sync.get("PDopenPageInfos", function(items){
                 infoArray = items['PDopenPageInfos'];
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "warning", siteReason]].concat(infoArray);
-                chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                if(writeStatus) {
+                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                }
             });
-            //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
     
             //Set Background color to red if enabled
             chrome.storage.sync.get("PDsetBGColor", function(items){
@@ -93,8 +73,7 @@ async function main(){
             siteStatus = "warning";
         }
     }
-    checkSafe();
-    checkWarning();
+    processStatus(true);
 
     //Schauen ob schon was erkannt wurde, und wenn nein: erst VTT ausfuehren
     if(!warningSite && !safeSite){
@@ -110,8 +89,7 @@ async function main(){
         //TODO: Await wartet nicht, da kein Promise da ist
         await getVirusTotalInfo("current page");
         await sleep(1000);
-        checkSafe();
-        checkWarning();
+        processStatus(false);
     }
 
 
@@ -195,7 +173,7 @@ async function getVirusTotalInfo(url) {
                 chrome.storage.sync.get("PDopenPageInfos", function(items){
                     infoArray = items['PDopenPageInfos'];
                     if(infoArray.length>100){infoArray.pop()}
-                    infoArray = [[currentSiteShort, "warning", "VTTScan"]].concat(infoArray);
+                    infoArray = [[currentSiteShort, "warning", "VTTScan", [totalVotes, positiveVotes, negativeVotes]]].concat(infoArray);
                     chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
                 });
                 warningSite = true;
@@ -206,7 +184,7 @@ async function getVirusTotalInfo(url) {
                 chrome.storage.sync.get("PDopenPageInfos", function(items){
                     infoArray = items['PDopenPageInfos'];
                     if(infoArray.length>100){infoArray.pop()}
-                    infoArray = [[currentSiteShort, "safe", "VTTScan"]].concat(infoArray);
+                    infoArray = [[currentSiteShort, "safe", "VTTScan", [totalVotes, positiveVotes, negativeVotes]]].concat(infoArray);
                     chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
                 });
                 warningSite = false;
@@ -223,7 +201,6 @@ async function inputPDIcon(pwElems) {
     for(let item of pwElems){
         item.placeholder = texts.texts.placeholderPassword[language];
         //create item svg
-        //TODO: Altes Logo von Icons8 --> Erneuern
         var newIcon = document.createElement('span');
         newIcon.className = "PDIcon";
         var newItemSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
