@@ -41,10 +41,19 @@ async function main(){
         if(safeSite){
             chrome.storage.sync.get("PDopenPageInfos", function(items){
                 infoArray = items['PDopenPageInfos'];
+                var index = 0;
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "safe", "whitelist"]].concat(infoArray);
                 if(writeStatus){
-                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                console.log(knownSites);
+                for (site of knownSites){
+                    if(site[0] == currentSiteShort){
+                        knownSites.splice(index, 1);
+                        break;
+                    }
+                    index += 1;
+                }
+                chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
                 }
             });
             siteStatus = "safe";
@@ -56,6 +65,13 @@ async function main(){
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "warning", siteReason]].concat(infoArray);
                 if(writeStatus) {
+                    for (site of knownSites){
+                        if(site[0] == currentSiteShort){
+                            knownSites.splice(index, 1);
+                            break;
+                        }
+                        index += 1;
+                    }
                     chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
                 }
             });
@@ -89,7 +105,7 @@ async function main(){
         //TODO: Await wartet nicht, da kein Promise da ist
         await getVirusTotalInfo("current page");
         await sleep(1000);
-        processStatus(false);
+        processStatus(true);
     }
 
 
