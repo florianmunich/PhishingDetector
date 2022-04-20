@@ -60,6 +60,10 @@ body.unknown{
     margin: 0px 5px 0px 0px;
 }
 
+.infoIMG {
+    width: 35px;
+}
+
 .name {
     font-size: 14pt;
     margin: 0px 100px 0px 0px;
@@ -100,7 +104,6 @@ body.unknown{
 .unknown .currentPageColored {
     color: #fbba2e;
 }
-
 
 /**************************************** End Current page ***********************************/
 /******************************************** Settings ***************************************/

@@ -4,6 +4,7 @@ var phishingSites;
 var safeSites;
 var siteStatus;
 var siteReason;
+var VTTStats = null;
 var currentSiteShort;
 
 function createElementWithClass(type, className) {
@@ -89,8 +90,11 @@ async function init(){
   var nameExtension = identifier.appendChild(createElementWithClass('div', 'name'));
   nameExtension.innerHTML = 'Phishing Detector';
   iconsRight = identifier.appendChild(createElementWithClass('div', 'iconsRight'));
-  var infoImg = iconsRight.appendChild(createElementWithClass('img', 'logoIMG'));
-  infoImg.setAttribute('src', 'https://img.icons8.com/ios-glyphs/30/000000/info--v1.png');
+  var infopage= iconsRight.appendChild(createElementWithClass('a', 'infoSection'));
+  var infoImg = infopage.appendChild(createElementWithClass('img', 'infoIMG'));
+  infoImg.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/info.png');
+  infopage.setAttribute('href', 'infopage.html');
+  infopage.setAttribute('target', '_blank');
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
   //Page Info Part
@@ -111,11 +115,15 @@ async function init(){
       for (site of knownSites){
         if(site[0] == currentSiteShort){
           console.log(pageInfos, currentSite = currentSiteShort, warningType = site[1], warningReason = site[2]);
-          setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = site[1], warningReason = site[2]);
           //set globals
           //currentSiteShort = site[0];
           siteStatus = site[1];
-          siteReason = site [2];
+          siteReason = site[2];
+          if(siteReason == "VTTScan"){
+            VTTStats = site[3];
+            console.log(site);
+          }
+          setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = siteStatus, warningReason = siteReason);
           break;
         }
       }
@@ -235,47 +243,45 @@ async function init(){
 }
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
-  //console.log(htmlObject, currentSite, warningType, warningReason);
+  console.log(htmlObject, currentSite, warningType, warningReason, VTTStats);
   htmlObject.classList.add(warningType);
   document.body.classList.add(warningType);
   //console.log(warningType, warningReason);
-  htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification[warningType][warningReason][language];
   htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication[warningType][language];
+  htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification[warningType][warningReason][language];
   var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
   switch (warningType) {
     case 'warning': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_red.svg'); break;
     case 'unknown': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_yellow.svg'); break;
     case 'safe': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_green.svg'); break;
   }
+  console.log(VTTStats);
+  if(VTTStats != null){
+    //Display results
+    resultText = texts.texts.currentPage.justification.VTTText.result[language];
+    resultText += " " + VTTStats[1];
+    resultText += " " + texts.texts.currentPage.justification.VTTText.pos[language];
+    resultText += ", " + VTTStats[2];
+    resultText += " " + texts.texts.currentPage.justification.VTTText.neg[language] + ".";
+    var virusScanResult = createElementWithClass('div', 'virusScanResult');
+    virusScanResult.innerHTML = resultText;
+    htmlObject.childNodes[2].appendChild(document.createElement('br'));
+    htmlObject.childNodes[2].appendChild(virusScanResult);
 
-  //Not needed anymore, handled in the upper part
-/*   if(warningReason == "warning") {
-    document.body.classList.add('warning');//add "Warning" to the body element
-    htmlObject.classList.add('warning');
-    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.warning.blacklist[language];
-    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.warning[language];
-    var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
-    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_red.svg');
+    //Link results
+    var VTTResultsLink = createElementWithClass('a', 'VTTResultsLink');
+    var currentSiteB64 = btoa(currentSite).replaceAll('=', '');//Somehow, VTT can't handle '='
+    console.log(currentSite, currentSiteB64);
+    VTTResultsLink.setAttribute('href', 'https://www.virustotal.com/gui/url/' + currentSiteB64);
+    VTTResultsLink.setAttribute('target', '_blank');
+    VTTResultsLink.innerHTML = texts.texts.currentPage.justification.VTTText.retrieve[language];
+    htmlObject.childNodes[2].appendChild(VTTResultsLink);
   }
-  if(warningReason == "whitelist") {
-    htmlObject.classList.add('safe');
-    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.safe.whitelist[language];
-    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.safe[language];
-    var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
-    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_green.svg');
-  }
-  if(warningType == "unknown") {
-    document.body.classList.add('unknown');//add "Warning" to the body element
-    htmlObject.classList.add('unknown');
-    htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification.unknown[language];
-    htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication.unknown[language];
-    var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
-    logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_yellow.svg');
-  } */
+
 }
 
 //Does not work, as current page is popup window
-async function analyzePage() {
+/* async function analyzePage() {
   var allKnownSites;
 
   //Lädt die Liste der bekannten Seiten herunter
@@ -347,7 +353,7 @@ async function analyzePage() {
       //getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
       chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
   }
-}
+} */
 
 async function downloadStats() {
   filename = "PDStats";
@@ -418,7 +424,7 @@ texts = {
           "VTTScan": {
             "english": " was found unsafe by running a virus scan!",
             "german" : " wurde nach Durchf&uuml;hren von Virenscans als unsicher befunden!"
-        }
+          }
         },
         "safe": {
           "whitelist": {
@@ -438,6 +444,28 @@ texts = {
           "noScan": {
             "english": " is neither in our database nor a virus scan was performed so far. Be careful when entering data here.",
             "german" : " haben wir nicht in unserer Datenbank gefunden, und bisher wurde auch kein Virenscan durchgef&uuml;hrt. Seien Sie vorsichtig, wenn Sie hier Daten eingeben."
+          }
+        },
+        "VTTText": {
+          "result": {
+            "english": "Result: ",
+            "german": "Ergebnis: "
+          },
+          "pos": {
+            "english": "positive",
+            "german": "positiv"
+          },
+          "neg": {
+            "english": "negative",
+            "german": "negativ"
+          },
+          "neutral": {
+            "english": "unrated",
+            "german": "unbewertet"
+          },
+          "retrieve": {
+            "english": "View results",
+            "german": "Ergebnis ansehen"
           }
         }
       }
@@ -484,8 +512,8 @@ texts = {
         "german": "Wie funktioniert es?"
       },
       "infoText": {
-        "english": "English: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.",
-        "german": "Deutsch: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua."
+        "english": "English: PhishingDetector uses blacklists and whitelists for known sites. If a website is not on these lists, a virus scan is retrieved from virustotal.com.",
+        "german": "PhishingDetector benutzt Black- sowie Whitelists f&uuml;r bekannte Seiten. Ist eine Webseite nicht auf diesen Listen vorhanden, wird ein Virenscan von virustotal.com abgerufen."
       }
     }
   }
