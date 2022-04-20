@@ -11,7 +11,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 //set default settings
 chrome.storage.sync.set({'PDactivationStatus': true}, function() {});
-chrome.storage.sync.set({'PDsetBGColor': true}, function() {});
+chrome.storage.sync.set({'PDsetBGColor': false}, function() {});
 chrome.storage.sync.set({'PDblockEntries': true}, function() {});
 chrome.storage.sync.set({'PDlanguage': "german"}, function() {});
 chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
@@ -37,7 +37,7 @@ chrome.runtime.onMessage.addListener(
       console.log("VTT initiated: " + sender.tab.url);
       url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2]
       //url = "https://google.com";
-      console.log(url);
+      console.log(" VTT Scan started for: " + url);
         fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
 
         const options = {
