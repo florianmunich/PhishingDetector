@@ -111,35 +111,27 @@ async function init(){
     currentSiteShort = response.currentURL;
     chrome.storage.sync.get('PDopenPageInfos', function(items){
       knownSites = items['PDopenPageInfos'];
-      console.log(knownSites);
+      //console.log("known Sites: ", knownSites);
+      var siteInKnown = false;
       for (site of knownSites){
         if(site[0] == currentSiteShort){
-          console.log(pageInfos, currentSite = currentSiteShort, warningType = site[1], warningReason = site[2]);
           //set globals
-          //currentSiteShort = site[0];
           siteStatus = site[1];
           siteReason = site[2];
           if(siteReason == "VTTScan"){
             VTTStats = site[3];
-            console.log(site);
           }
           setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = siteStatus, warningReason = siteReason);
+          siteInKnown = true;
           break;
         }
       }
+      //if site is not known, set Error text
+      if(!siteInKnown){
+        setIdentifierText(pageInfos, currentSite = '', warningType = 'unknown', warningReason = 'notOpened');
+      }
     });
   });
-/*   chrome.storage.sync.get('PDcurrentSiteInfos', function(items){
-    values = items['PDcurrentSiteInfos'];
-    console.log(values);
-    setIdentifierText(pageInfos, currentSite = values[0], warningType = values[1], warningReason = values[2]);
-
-    //set globals
-    currentSiteShort = values[0];
-    siteStatus = values[1];
-    siteReason = values [2];
-  }); */
-
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
   //settings Switches
@@ -157,7 +149,6 @@ async function init(){
     switchBoxInput.checked = true;
 
     switchBox.appendChild(createElementWithClass('span', 'slider round'));
-
     switchBox.addEventListener("click", handleSettingClick);
     return container;
   }
@@ -413,7 +404,11 @@ texts = {
         "unknown": {
           "english": "Unknown Site",
           "german": "Unbekannte Seite"
-        }
+        }/* ,
+        "notOpened": {
+          "english": "Site not analyzed",
+          "german": "Seite nicht analysiert"
+        } */
       },
       "justification": {
         "warning": {
@@ -444,6 +439,10 @@ texts = {
           "noScan": {
             "english": " is neither in our database nor a virus scan was performed so far. Be careful when entering data here.",
             "german" : " haben wir nicht in unserer Datenbank gefunden, und bisher wurde auch kein Virenscan durchgef&uuml;hrt. Seien Sie vorsichtig, wenn Sie hier Daten eingeben."
+          },
+          "notOpened": {
+            "english": "The page was not opened with the plugin enabled or is a system page. Please reload the page to get info about it.",
+            "german": "Die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite. Bitte lade die Seite neu, um Infos &uuml;ber sie abzurufen."
           }
         },
         "VTTText": {
