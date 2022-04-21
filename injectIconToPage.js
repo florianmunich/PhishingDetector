@@ -22,7 +22,22 @@ function createElementWithClass(type, className) {
     const element = document.createElement(type);
     element.className = className;
     return element;
-  }
+}
+
+function deleteCurrentSiteFromArray(infoArray) {
+    var index = 0;
+    console.log(infoArray);
+    for (site of infoArray){
+        console.log(site, currentSiteShort);
+        if(site[0] == currentSiteShort){
+            console.log(site);
+            infoArray.splice(index, 1);
+            break;
+        }
+        index += 1;
+    }
+    return infoArray;
+}
 
 async function main(){
     console.log("PD: Site Scan initiated!");
@@ -40,20 +55,12 @@ async function main(){
     function processStatus(writeStatus){
         if(safeSite){
             chrome.storage.sync.get("PDopenPageInfos", function(items){
-                infoArray = items['PDopenPageInfos'];
-                var index = 0;
+                var infoArray = items['PDopenPageInfos'];
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "safe", "whitelist"]].concat(infoArray);
                 if(writeStatus){
-                console.log(knownSites);
-                for (site of knownSites){
-                    if(site[0] == currentSiteShort){
-                        knownSites.splice(index, 1);
-                        break;
-                    }
-                    index += 1;
-                }
-                chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                    infoArray = deleteCurrentSiteFromArray(infoArray);
+                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
                 }
             });
             siteStatus = "safe";
@@ -61,17 +68,11 @@ async function main(){
         if(warningSite){
             console.log("warning site!");
             chrome.storage.sync.get("PDopenPageInfos", function(items){
-                infoArray = items['PDopenPageInfos'];
+                var infoArray = items['PDopenPageInfos'];
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "warning", siteReason]].concat(infoArray);
                 if(writeStatus) {
-                    for (site of knownSites){
-                        if(site[0] == currentSiteShort){
-                            knownSites.splice(index, 1);
-                            break;
-                        }
-                        index += 1;
-                    }
+                    infoArray = deleteCurrentSiteFromArray(infoArray);
                     chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
                 }
             });
@@ -94,7 +95,8 @@ async function main(){
     //Schauen ob schon was erkannt wurde, und wenn nein: erst VTT ausfuehren
     if(!warningSite && !safeSite){
         chrome.storage.sync.get("PDopenPageInfos", function(items){
-            infoArray = items['PDopenPageInfos'];
+            var infoArray = items['PDopenPageInfos'];
+            infoArray = deleteCurrentSiteFromArray(infoArray);
             if(infoArray.length>100){infoArray.pop()}
             infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
             chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
@@ -188,6 +190,7 @@ async function getVirusTotalInfo(url) {
                 console.log("virus scan: warning");
                 chrome.storage.sync.get("PDopenPageInfos", function(items){
                     infoArray = items['PDopenPageInfos'];
+                    infoArray = deleteCurrentSiteFromArray(infoArray);
                     if(infoArray.length>100){infoArray.pop()}
                     infoArray = [[currentSiteShort, "warning", "VTTScan", [totalVotes, positiveVotes, negativeVotes]]].concat(infoArray);
                     chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
@@ -199,6 +202,7 @@ async function getVirusTotalInfo(url) {
                 console.log("virus scan: safe");
                 chrome.storage.sync.get("PDopenPageInfos", function(items){
                     infoArray = items['PDopenPageInfos'];
+                    infoArray = deleteCurrentSiteFromArray(infoArray);
                     if(infoArray.length>100){infoArray.pop()}
                     infoArray = [[currentSiteShort, "safe", "VTTScan", [totalVotes, positiveVotes, negativeVotes]]].concat(infoArray);
                     chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
