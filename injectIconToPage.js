@@ -8,29 +8,28 @@ var id;
 var siteStatus;
 var siteReason = "noData";
 //check site and write current information in Chrome storage
-var warningSite;
-var safeSite;
+var warningSite = false;
+var safeSite = false;
 
 var language = "english"; //Default, can be overwritten by chrome storage
 
-//Wartet eine gegebene Zeit in Millisekunden
+//Waits a given time in milliseconds
 function sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
+//creates an HTML object and adds a class
 function createElementWithClass(type, className) {
     const element = document.createElement(type);
     element.className = className;
     return element;
 }
 
+//removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
 function deleteCurrentSiteFromArray(infoArray) {
     var index = 0;
-    console.log(infoArray);
     for (site of infoArray){
-        console.log(site, currentSiteShort);
         if(site[0] == currentSiteShort){
-            console.log(site);
             infoArray.splice(index, 1);
             break;
         }
@@ -46,11 +45,36 @@ async function main(){
     });
     await sleep(1);
 
-    await declareSites();
+    //check if site is in recently opened sites
+    await chrome.storage.sync.get("PDopenPageInfos", function(items){
+        var infoArray = items['PDopenPageInfos'];
+        console.log(infoArray);
+        for (site of infoArray){
+            if(site[0] == currentSiteShort){
+                console.log("page found in recently visited pages!");
+                var VTTinfos = null;
+                siteStatus = site[1];
+                siteReason = site[2];
+                if(siteStatus == "safe"){safeSite = true;}
+                if(siteStatus == "warning"){warningSite = true;}
+                if(site[2] == 'VTTScan'){
+                    VTTinfos = site[3];
+                }
+                break;
+            }
+        }
+    });
+    await sleep(5);
+    console.log(safeSite,warningSite);
+    //check if site is in blacklist/whitelist
+    if(!warningSite & !safeSite){
+        await declareSites();
 
-    warningSite = await siteInSuspected(currentSite);
-    safeSite = await siteInSafe(currentSite);
-    //console.log(warningSite, safeSite);
+        warningSite = await siteInSuspected(currentSite);
+        safeSite = await siteInSafe(currentSite);
+        //console.log(warningSite, safeSite);
+    
+    }
 
     function processStatus(writeStatus){
         if(safeSite){
@@ -90,9 +114,10 @@ async function main(){
             siteStatus = "warning";
         }
     }
+
     processStatus(true);
 
-    //Schauen ob schon was erkannt wurde, und wenn nein: erst VTT ausfuehren
+    //check site with virustotal
     if(!warningSite && !safeSite){
         chrome.storage.sync.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
@@ -176,8 +201,9 @@ async function declareSites(){
 }
 
 async function getVirusTotalInfo(url) {
+    console.log("VTT initiated!");
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
-        console.log(response.VTTresult);
+        //console.log(response.VTTresult);
         virusScan = response.VTTresult;
         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
         positiveVotes = virusScan.harmless;
@@ -219,7 +245,8 @@ async function getVirusTotalInfo(url) {
 //Platziert das PD Icon neben allen übergebenen Feldern
 async function inputPDIcon(pwElems) {
     for(let item of pwElems){
-        item.placeholder = texts.texts.placeholderPassword[language];
+        //change text of password field
+        //item.placeholder = texts.texts.placeholderPassword[language];
         //create item svg
         var newIcon = document.createElement('span');
         newIcon.className = "PDIcon";
@@ -247,32 +274,27 @@ async function inputPDIcon(pwElems) {
         iconAppended = newItemSVG;
 
         var container;
-        //var belonging;
         
         iconAppended.addEventListener("mouseenter", async function(event) {
             if(!(container == undefined)){return;}
             container = buildInfoContainer(iconAppended);
-            console.log("hover");
+            //console.log("hover");
             iconAppended.classList.add('iconHovered');
             container.classList.add('hoverContainerOnHover');
             if(warningSite){
                 warning();
-                //belonging = showBelonging(container, 'warning', '#FF6347');
             }
             else if(safeSite){
                 safe();
-                //belonging = showBelonging(container, 'safe', '#3cb371');
             }
             if(!safeSite && !warningSite){
                 unknown();
-                //belonging = showBelonging(container, 'unknown', '#fbba2e');
             }
 
             document.body.addEventListener("click", function(event) {
                 if(container == undefined) {return;}
                 iconAppended.classList.remove('iconHovered');
                 container.remove();
-                //belonging.remove();
                 container = undefined;
             });
             writeStats("hover");
@@ -280,6 +302,7 @@ async function inputPDIcon(pwElems) {
     }
 }
 
+//shows an object that directs to the popup window. As popup cannot be shown automatically, this does not work
 function showBelonging(container, warningType, color) {
     var belongingObject = createElementWithClass('canvas', 'belongingObject ' + warningType);
     belongingObject.width = document.body.clientWidth -1;
@@ -340,7 +363,6 @@ function buildInfoContainer(iconAppended){
 
 //Schreibt die Texte je nach Fall aus der json in die HoverBox
 function appendTexts(rating, reason){
-    console.log(rating, reason);
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
     var recommendation = document.getElementsByClassName('recommendation')[0];
