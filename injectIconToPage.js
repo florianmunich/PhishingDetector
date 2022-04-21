@@ -302,25 +302,6 @@ async function inputPDIcon(pwElems) {
     }
 }
 
-//shows an object that directs to the popup window. As popup cannot be shown automatically, this does not work
-function showBelonging(container, warningType, color) {
-    var belongingObject = createElementWithClass('canvas', 'belongingObject ' + warningType);
-    belongingObject.width = document.body.clientWidth -1;
-    belongingObject.height = window.innerHeight;
-    //document.body.appendChild(belongingObject);
-
-    var ctx = belongingObject.getContext('2d');
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(parseInt(container.style.left) + 300, parseInt(container.style.top) + 10);
-    ctx.lineTo(window.innerWidth - 250, 0);
-    ctx.lineTo(window.innerWidth - 250, 300);
-    ctx.lineTo(parseInt(container.style.left) + 300, parseInt(container.style.top) + 50);
-    ctx.fill();
-    
-    return belongingObject;
-}
-
 function buildInfoContainer(iconAppended){
     var container = document.createElement('div');
     container.setAttribute('class', 'hoverContainer');
