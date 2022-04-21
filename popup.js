@@ -111,7 +111,7 @@ async function init(){
     currentSiteShort = response.currentURL;
     chrome.storage.sync.get('PDopenPageInfos', function(items){
       knownSites = items['PDopenPageInfos'];
-      //console.log("known Sites: ", knownSites);
+      console.log("known Sites: ", knownSites);
       var siteInKnown = false;
       for (site of knownSites){
         if(site[0] == currentSiteShort){
@@ -158,7 +158,7 @@ async function init(){
 
   settingA = settingsBox.appendChild(await addSetting('PDactivationStatus', texts.texts.settings.active.title[language], texts.texts.settings.active.explanation[language]));
   settingB = settingsBox.appendChild(await addSetting('PDsetBGColor', texts.texts.settings.backgroundIndication.title[language], texts.texts.settings.backgroundIndication.explanation[language]));
-  settingC = settingsBox.appendChild(await addSetting('PDblockEntries', texts.texts.settings.blockInputs.title[language], texts.texts.settings.blockInputs.explanation[language]));
+  settingC = settingsBox.appendChild(await addSetting('PDShareData', texts.texts.settings.shareData.title[language], texts.texts.settings.shareData.explanation[language]));
   
   async function setProperty(setting){
     var enabled;
@@ -490,14 +490,14 @@ texts = {
           "german": "Bei erkannten sch&auml;dlichen Webseiten: Hintergrund rot einf&auml;rben"
         }
       },
-      "blockInputs": {
+      "shareData": {
         "title": {
-          "english": "Block inputs",
-          "german": "Eingaben sperren"
+          "english": "Share Statistics",
+          "german": "Statistik teilen"
         },
         "explanation": {
-          "english": "For recognized malicious websites, allow input only after explicit confirmation",
-          "german": "Bei erkannten sch&auml;dlichen Webseiten Eingaben nur nach expliziter Best&auml;tigung erlauben"
+          "english": "PhishingDetector is a study. Please help us by sharing anonymous data.",
+          "german": "PhishingDetector ist eine Studie. Bitte hilf uns, indem du anonyme Daten mit uns teilst."
         }
       },
       "language":{
