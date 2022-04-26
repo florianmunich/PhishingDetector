@@ -122,15 +122,22 @@ async function init(){
             VTTStats = site[3];
           }
           setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = siteStatus, warningReason = siteReason);
+          console.log(siteStatus,siteReason, "writing stats soon");
+          writeStats("popup");
           siteInKnown = true;
           break;
         }
       }
       //if site is not known, set Error text
       if(!siteInKnown){
+        siteStatus = "unknown";
+        siteReason = "noScan";
         setIdentifierText(pageInfos, currentSite = '', warningType = 'unknown', warningReason = 'notOpened');
+        console.log(siteStatus,siteReason, "writing stats soon");
+        writeStats("popup");
       }
     });
+
   });
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
@@ -225,12 +232,12 @@ async function init(){
   //Download Stats
   var downloadStatsButton = container.appendChild(createElementWithClass('button', 'downloadStatsButton'));
   downloadStatsButton.innerHTML = "Download Statistics";
-  downloadStatsButton.addEventListener('click', downloadStats());
+  downloadStatsButton.addEventListener('click', downloadStats);
 
   //Add container to page
   document.body.appendChild(container);
 
-  writeStats("popup");
+
 }
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
@@ -351,32 +358,39 @@ async function downloadStats() {
   statsArray = []
   await chrome.storage.sync.get('PDStats', function(items){
     statsArray = items['PDStats'];
+    console.log(statsArray);
+    var element = document.createElement('a');
+    var statsArrayString = "";
+    for (entry of statsArray){
+      statsArrayString += entry + "\n";
+    }
+    console.log(statsArrayString);
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+    element.setAttribute('download', filename);
+  
+    element.style.display = 'none';
+    document.body.appendChild(element);
+  
+    element.click();
+  
+    document.body.removeChild(element);
   });
-  await sleep(100);
-  var element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(statsArray));
-  element.setAttribute('download', filename);
 
-  element.style.display = 'none';
-  document.body.appendChild(element);
-
-  //element.click();
-
-  document.body.removeChild(element);
 }
 
 async function writeStats(type) {
   var statsArray = [];
   await chrome.storage.sync.get('PDStats', function(items){
-      statsArray = items['PDStats'];
+    statsArray = items['PDStats'];
+      //console.log(statsArray);
+    //await sleep(1);
+    id = statsArray.length + 1;
+    statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
+    //await sleep(1);
+    //console.log(statsArray);
+    chrome.storage.sync.set({'PDStats': statsArray}, function() {});
   });
-  //console.log(statsArray);
-  await sleep(1);
-  id = statsArray.length + 1;
-  statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
-  await sleep(1);
-  //console.log(statsArray);
-  chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+
 }
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
@@ -441,8 +455,8 @@ texts = {
             "german" : " haben wir nicht in unserer Datenbank gefunden, und bisher wurde auch kein Virenscan durchgef&uuml;hrt. Seien Sie vorsichtig, wenn Sie hier Daten eingeben."
           },
           "notOpened": {
-            "english": "The page was not opened with the plugin enabled or is a system page. Please reload the page to get info about it.",
-            "german": "Die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite. Bitte lade die Seite neu, um Infos &uuml;ber sie abzurufen."
+            "english": "The plugin is disabled, the page was not opened with the plugin enabled or is a system page. Please reload the page to get info about it.",
+            "german": "Das Plugin ist deaktiviert, die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite. Bitte lade die Seite neu, um Infos &uuml;ber sie abzurufen."
           }
         },
         "VTTText": {
