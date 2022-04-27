@@ -40,13 +40,13 @@ function deleteCurrentSiteFromArray(infoArray) {
 
 async function main(){
     console.log("PD: Site Scan initiated!");
-    await chrome.storage.sync.get('PDlanguage', function(items){
+    await chrome.storage.local.get('PDlanguage', function(items){
         language = items['PDlanguage'];
     });
     await sleep(1);
 
     //check if site is in recently opened sites
-    await chrome.storage.sync.get("PDopenPageInfos", function(items){
+    await chrome.storage.local.get("PDopenPageInfos", function(items){
         var infoArray = items['PDopenPageInfos'];
         console.log(infoArray);
         for (site of infoArray){
@@ -78,13 +78,13 @@ async function main(){
 
     function processStatus(writeStatus){
         if(safeSite){
-            chrome.storage.sync.get("PDopenPageInfos", function(items){
+            chrome.storage.local.get("PDopenPageInfos", function(items){
                 var infoArray = items['PDopenPageInfos'];
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "safe", "whitelist"]].concat(infoArray);
                 if(writeStatus){
                     infoArray = deleteCurrentSiteFromArray(infoArray);
-                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                    chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
                 }
             });
             siteStatus = "safe";
@@ -92,18 +92,18 @@ async function main(){
         }
         if(warningSite){
             console.log("warning site!");
-            chrome.storage.sync.get("PDopenPageInfos", function(items){
+            chrome.storage.local.get("PDopenPageInfos", function(items){
                 var infoArray = items['PDopenPageInfos'];
                 if(infoArray.length>100){infoArray.pop()}
                 infoArray = [[currentSiteShort, "warning", siteReason]].concat(infoArray);
                 if(writeStatus) {
                     infoArray = deleteCurrentSiteFromArray(infoArray);
-                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                    chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
                 }
             });
     
             //Set Background color to red if enabled
-            chrome.storage.sync.get("PDsetBGColor", function(items){
+            chrome.storage.local.get("PDsetBGColor", function(items){
                 enabled = items['PDsetBGColor'];
                 console.log("color enabled: ", enabled);
                 if(enabled){
@@ -125,14 +125,14 @@ async function main(){
     //check site with virustotal
     if(!warningSite && !safeSite){
         console.log("Neither safe nor unsafe so far");
-        chrome.storage.sync.get("PDopenPageInfos", function(items){
+        chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             infoArray = deleteCurrentSiteFromArray(infoArray);
             if(infoArray.length>100){infoArray.pop()}
             infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
-            chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+            chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
         });
-        //chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
+        //chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
         siteStatus = "unknown";
         siteReason = "noScan";
         //TODO: Await wartet nicht, da kein Promise da ist
@@ -151,7 +151,7 @@ async function main(){
 }
 
 //Start routine if plugin is enabled
-chrome.storage.sync.get("PDactivationStatus", function(items){
+chrome.storage.local.get("PDactivationStatus", function(items){
     enabled = items['PDactivationStatus'];
     if(enabled)
         main()
@@ -221,24 +221,24 @@ async function getVirusTotalInfo(url) {
         if(totalVotes > 50) {
             if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
                 console.log("virus scan: warning");
-                chrome.storage.sync.get("PDopenPageInfos", function(items){
+                chrome.storage.local.get("PDopenPageInfos", function(items){
                     infoArray = items['PDopenPageInfos'];
                     infoArray = deleteCurrentSiteFromArray(infoArray);
                     if(infoArray.length>100){infoArray.pop()}
                     infoArray = [[currentSiteShort, "warning", "VTTScan", [totalVotes, positiveVotes, negativeVotes]]].concat(infoArray);
-                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                    chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
                 });
                 warningSite = true;
                 safeSite = false;
             }
             else {
                 console.log("virus scan: safe");
-                chrome.storage.sync.get("PDopenPageInfos", function(items){
+                chrome.storage.local.get("PDopenPageInfos", function(items){
                     infoArray = items['PDopenPageInfos'];
                     infoArray = deleteCurrentSiteFromArray(infoArray);
                     if(infoArray.length>100){infoArray.pop()}
                     infoArray = [[currentSiteShort, "safe", "VTTScan", [totalVotes, positiveVotes, negativeVotes]]].concat(infoArray);
-                    chrome.storage.sync.set({'PDopenPageInfos': infoArray}, function() {});
+                    chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
                 });
                 warningSite = false;
                 safeSite = true;
@@ -380,7 +380,7 @@ function warning(){
 
 
 /*     var values = [currentSiteShort, "warning", reason];
-    chrome.storage.sync.set({'PDcurrentSiteInfos': values}, function() {}); */
+    chrome.storage.local.set({'PDcurrentSiteInfos': values}, function() {}); */
 }
 
 //Erstellt alle Infos für den Fall einer sicheren Seite
@@ -425,14 +425,14 @@ async function siteInSafe(site){
 
 function writeStats(type) {
     //var statsArray = [];
-    chrome.storage.sync.get('PDStats', function(items){
+    chrome.storage.local.get('PDStats', function(items){
         var statsArray = items['PDStats'];
         //await sleep(1);
         id = statsArray.length + 1;
         statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
         //await sleep(1);
         console.log(statsArray);
-        chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+        chrome.storage.local.set({'PDStats': statsArray}, function() {});
     });
     
 }

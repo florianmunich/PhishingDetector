@@ -3,7 +3,7 @@ let color = '#3aa757';
 var currentWebsite = "";
 
 chrome.runtime.onInstalled.addListener(() => {
-  //chrome.storage.sync.set({ color });
+  //chrome.storage.local.set({ color });
   //console.log('Default background color set to %cgreen', `color: ${color}`);
   var d = Date.now();
   d = new Date(d);
@@ -14,28 +14,28 @@ chrome.runtime.onInstalled.addListener(() => {
 
 
 //set default settings
-chrome.storage.sync.set({'PDactivationStatus': true}, function() {});
-chrome.storage.sync.set({'PDsetBGColor': false}, function() {});
-chrome.storage.sync.set({'PDShareData': true}, function() {});
-chrome.storage.sync.set({'PDlanguage': "german"}, function() {});
-chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
-chrome.storage.sync.get('PDStats', function(items){
+chrome.storage.local.set({'PDactivationStatus': true}, function() {});
+chrome.storage.local.set({'PDsetBGColor': false}, function() {});
+chrome.storage.local.set({'PDShareData': true}, function() {});
+chrome.storage.local.set({'PDlanguage': "german"}, function() {});
+chrome.storage.local.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
+chrome.storage.local.get('PDStats', function(items){
   if(items['PDStats'] == undefined){
     var d = Date.now();
     d = new Date(d);
     d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-    chrome.storage.sync.set({'PDStats': [d, 'Plugin up and running']}, function() {});
+    chrome.storage.local.set({'PDStats': [d, 'Plugin up and running']}, function() {});
   }
 });
 //For testing StatsArray immer nullen
 /* var d = Date.now();
 d = new Date(d);
 d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-chrome.storage.sync.set({'PDStats': [d, 'Plugin up and running']}, function() {}); */
+chrome.storage.local.set({'PDStats': [d, 'Plugin up and running']}, function() {}); */
 
-chrome.storage.sync.get('PDopenPageInfos', function(items){
+chrome.storage.local.get('PDopenPageInfos', function(items){
   if(items['PDopenPageInfos'] == undefined){
-    chrome.storage.sync.set({'PDopenPageInfos': []}, function() {});
+    chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
   }
 });
 
@@ -111,7 +111,7 @@ function getCurrentPage(){
 
 async function writeStats(type) {
   //var statsArray = [];
-  chrome.storage.sync.get('PDStats', function(items){
+  chrome.storage.local.get('PDStats', function(items){
     var statsArray = items['PDStats'];
     console.log(statsArray);
     //await sleep(1);
@@ -124,7 +124,7 @@ async function writeStats(type) {
         console.log(id, type, tabs[0].url);
         return;
       }
-      chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+      chrome.storage.local.set({'PDStats': statsArray}, function() {});
     });
     
     //await sleep(1);

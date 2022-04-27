@@ -27,7 +27,7 @@ async function handleSettingClick(event) {
   );
   let setting = event.target.parentElement.parentElement.id;
   var currentSettingStatus;
-  await chrome.storage.sync.get(setting, function(items){
+  await chrome.storage.local.get(setting, function(items){
     currentSettingStatus = !items[setting];
   });
 
@@ -36,11 +36,11 @@ async function handleSettingClick(event) {
   //see what to save
   if(setting == "PDactivationStatus") {
     //the below buttons will be set to the general option also
-    await chrome.storage.sync.set({"PDactivationStatus": currentSettingStatus}, function() {});
-    await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+    await chrome.storage.local.set({"PDactivationStatus": currentSettingStatus}, function() {});
+    await chrome.storage.local.set({"PDsetBGColor": currentSettingStatus}, function() {});
     BGButton = document.getElementById('PDsetBGColor');
     BGButton.lastChild.firstChild.checked = currentSettingStatus;
-    await chrome.storage.sync.set({"PDShareData": currentSettingStatus}, function() {});
+    await chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {});
     BEButton = document.getElementById('PDShareData');
     BEButton.lastChild.firstChild.checked = currentSettingStatus;
     //disable or enable buttons (If general functionality is disabled, the other functions will be not clickable)
@@ -54,30 +54,30 @@ async function handleSettingClick(event) {
   }
   else{
     let general_function;
-    chrome.storage.sync.get("PDactivationStatus", function(items){
+    chrome.storage.local.get("PDactivationStatus", function(items){
       general_function = items["PDactivationStatus"];
       if(general_function){
         if(setting == "PDsetBGColor") {
           console.log("TOSET: ", currentSettingStatus);
-          chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+          chrome.storage.local.set({"PDsetBGColor": currentSettingStatus}, function() {});
           writeStats('PDsetBGColor set to ' + currentSettingStatus);
         }
         else if(setting == "PDShareData") {
-          chrome.storage.sync.set({"PDShareData": currentSettingStatus}, function() {});
+          chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {});
           writeStats('PDShareData set to ' + currentSettingStatus);
         }
       }
     });
   }
   await sleep(100);
-  chrome.storage.sync.get(setting, function(items){
+  chrome.storage.local.get(setting, function(items){
     console.log("Option set to: " + items[setting]);
   });
 }
 
 async function init(){
   //await analyzePage();
-  await chrome.storage.sync.get('PDlanguage', function(items){
+  await chrome.storage.local.get('PDlanguage', function(items){
     language = items['PDlanguage'];
   });
 
@@ -113,7 +113,7 @@ async function init(){
   await chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabURL"}, function(response) {
     //console.log(response);
     currentSiteShort = response.currentURL;
-    chrome.storage.sync.get('PDopenPageInfos', function(items){
+    chrome.storage.local.get('PDopenPageInfos', function(items){
       knownSites = items['PDopenPageInfos'];
       console.log("known Sites: ", knownSites);
       var siteInKnown = false;
@@ -173,7 +173,7 @@ async function init(){
   
   async function setProperty(setting){
     var enabled;
-    await chrome.storage.sync.get(setting.id, function(items){
+    await chrome.storage.local.get(setting.id, function(items){
       enabled = items[setting.id];
       if(!enabled){
         setting.lastChild.firstChild.checked = false;
@@ -216,7 +216,7 @@ async function init(){
     }
 
     switchBox.addEventListener("change", function(event) {
-      chrome.storage.sync.set({'PDlanguage': this.value}, function() {});
+      chrome.storage.local.set({'PDlanguage': this.value}, function() {});
       writeStats('Language set to ' + this.value);
       document.location.reload();
     });
@@ -338,13 +338,13 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   console.log("analyzze: " + currentSite + phishingSite + safeSite);
 
   if(safeSite){
-    chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
+    chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
   }
   if(phishingSite){
-      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
+      chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
 
       //Set Background color to red if enabled
-      chrome.storage.sync.get("PDsetBGColor", function(items){
+      chrome.storage.local.get("PDsetBGColor", function(items){
           enabled = items['PDsetBGColor'];
           if(enabled)
               document.body.style.backgroundColor = 'red';
@@ -354,14 +354,14 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   if(!phishingSite && !safeSite){
       console.log("VTT Necessary!");
       //getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
-      chrome.storage.sync.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
+      chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
   }
 } */
 
 function downloadStats() {
   filename = "PDStats";
   statsArray = []
-  chrome.storage.sync.get('PDStats', function(items){
+  chrome.storage.local.get('PDStats', function(items){
     statsArray = items['PDStats'];
     console.log(statsArray);
     var element = document.createElement('a');
@@ -370,7 +370,7 @@ function downloadStats() {
       statsArrayString += entry + "\n";
     }
 
-    chrome.storage.sync.get('PDopenPageInfos', function(items){
+    chrome.storage.local.get('PDopenPageInfos', function(items){
       statsArrayString += "\n\n\nCurrently known pages:\n";
       statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
       openPages = statsArray = items['PDopenPageInfos'];
@@ -404,7 +404,7 @@ function downloadStats() {
 
 function writeStats(type) {
   //var statsArray = [];
-  chrome.storage.sync.get('PDStats', function(items){
+  chrome.storage.local.get('PDStats', function(items){
     var statsArray = items['PDStats'];
       //console.log(statsArray);
     //await sleep(1);
@@ -412,7 +412,7 @@ function writeStats(type) {
     statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
     //await sleep(1);
     //console.log(statsArray);
-    chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+    chrome.storage.local.set({'PDStats': statsArray}, function() {});
   });
 
 }
