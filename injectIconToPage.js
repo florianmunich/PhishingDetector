@@ -202,6 +202,7 @@ async function declareSites(){
 
 async function getVirusTotalInfo(url) {
     console.log("VTT initiated!");
+    writeStats('VTTinitiated');
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
         //console.log(response.VTTresult);
         virusScan = response.VTTresult;
@@ -296,6 +297,7 @@ async function inputPDIcon(pwElems) {
                 iconAppended.classList.remove('iconHovered');
                 container.remove();
                 container = undefined;
+                writeStats("unhover");
             });
             writeStats("hover");
         });
@@ -415,16 +417,18 @@ async function siteInSafe(site){
     return false;
 }
 
-async function writeStats(type) {
-    var statsArray = [];
-    await chrome.storage.sync.get('PDStats', function(items){
-        statsArray = items['PDStats'];
+function writeStats(type) {
+    //var statsArray = [];
+    chrome.storage.sync.get('PDStats', function(items){
+        var statsArray = items['PDStats'];
+        //await sleep(1);
+        id = statsArray.length + 1;
+        statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
+        //await sleep(1);
+        console.log(statsArray);
+        chrome.storage.sync.set({'PDStats': statsArray}, function() {});
     });
-    await sleep(1);
-    id = statsArray.length + 1;
-    statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
-    await sleep(1);
-    chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+    
 }
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch

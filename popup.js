@@ -40,8 +40,8 @@ async function handleSettingClick(event) {
     await chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
     BGButton = document.getElementById('PDsetBGColor');
     BGButton.lastChild.firstChild.checked = currentSettingStatus;
-    await chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
-    BEButton = document.getElementById('PDblockEntries');
+    await chrome.storage.sync.set({"PDShareData": currentSettingStatus}, function() {});
+    BEButton = document.getElementById('PDShareData');
     BEButton.lastChild.firstChild.checked = currentSettingStatus;
     //disable or enable buttons (If general functionality is disabled, the other functions will be not clickable)
     BGButton.lastChild.firstChild.disabled = !currentSettingStatus;
@@ -49,6 +49,8 @@ async function handleSettingClick(event) {
     //Color the options in grey if they are disabled
     BGButton.firstChild.firstChild.classList.toggle('notApplicable');
     BEButton.firstChild.firstChild.classList.toggle('notApplicable');
+
+    writeStats('PDactivationStatus set to ' + currentSettingStatus);
   }
   else{
     let general_function;
@@ -58,9 +60,11 @@ async function handleSettingClick(event) {
         if(setting == "PDsetBGColor") {
           console.log("TOSET: ", currentSettingStatus);
           chrome.storage.sync.set({"PDsetBGColor": currentSettingStatus}, function() {});
+          writeStats('PDsetBGColor set to ' + currentSettingStatus);
         }
-        else if(setting == "PDblockEntries") {
-          chrome.storage.sync.set({"PDblockEntries": currentSettingStatus}, function() {});
+        else if(setting == "PDShareData") {
+          chrome.storage.sync.set({"PDShareData": currentSettingStatus}, function() {});
+          writeStats('PDShareData set to ' + currentSettingStatus);
         }
       }
     });
@@ -213,6 +217,7 @@ async function init(){
 
     switchBox.addEventListener("change", function(event) {
       chrome.storage.sync.set({'PDlanguage': this.value}, function() {});
+      writeStats('Language set to ' + this.value);
       document.location.reload();
     });
 
@@ -378,10 +383,10 @@ async function downloadStats() {
 
 }
 
-async function writeStats(type) {
-  var statsArray = [];
-  await chrome.storage.sync.get('PDStats', function(items){
-    statsArray = items['PDStats'];
+function writeStats(type) {
+  //var statsArray = [];
+  chrome.storage.sync.get('PDStats', function(items){
+    var statsArray = items['PDStats'];
       //console.log(statsArray);
     //await sleep(1);
     id = statsArray.length + 1;
