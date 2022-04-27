@@ -38,6 +38,14 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
     chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
   }
 });
+//Für testing known sites immer nullen
+chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
+
+chrome.storage.local.get('PDLastInjections', function(items){
+  if(items['PDLastInjections'] == undefined){
+    chrome.storage.local.set({'PDLastInjections': [Date.now(), Date.now(), Date.now(), Date.now()]}, function() {});
+  }
+});
 
 //Listen for messages and run ap VTT Check if requested
 chrome.runtime.onMessage.addListener(
@@ -61,28 +69,51 @@ chrome.runtime.onMessage.addListener(
       writeStats('Popup icon set to red (warningSite)');
     }
     else if (request.VTTtoCheckURL === "VTTcheck"){
-      console.log("VTT initiated: " + sender.tab.url);
-      url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2]
+      console.log("VTT grabbing report initiated: " + sender.tab.url);
+      url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2];
+      console.log(sender.tab.url);
       //url = "https://google.com";
-      console.log("VTT Scan started for: " + url);
-        fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
+      //console.log("VTT Scan started for: " + url + ";Base 64: " +btoa(url).replaceAll('=',''));
+        fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url).replaceAll('=','');
 
         const options = {
             method: 'GET',
             headers: {
             Accept: 'application/json',
-            'x-apikey': ''
+            'x-apikey': 'c2e3b147819ce14083ee5405bc1646fc1ec398720766dd8a31c955aeec54bdad'
             }
         };
 
-        var result;
         fetch(fetchURL, options)
             .then(response => response.json())
-            .then(response => sendResponse({VTTresult: response.data.attributes.last_analysis_stats}))
+            .then(response => sendResponse({VTTresult: response}))
             .catch(err => {
               writeStats('VTTError');
               console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
             });
+    }
+    else if(request.VTTtoCheckURL === "VTTrequestScan"){
+      urlToCheck = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2];
+      console.log("VTT scan requested: " + urlToCheck);
+      fetchURL = 'https://www.virustotal.com/api/v3/urls';
+
+      const options = {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'x-apikey': 'c2e3b147819ce14083ee5405bc1646fc1ec398720766dd8a31c955aeec54bdad',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({url: urlToCheck})
+      };
+
+      fetch(fetchURL, options)
+          .then(response => response.json())
+          .then(response => sendResponse({VTTresult: response}))
+          .catch(err => {
+            writeStats('VTTError');
+            console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
+          });
     }
     else if(request.VTTtoCheckURL === "getCurrentTabURL"){
       //console.log("URL request bekommen");
@@ -113,7 +144,7 @@ async function writeStats(type) {
   //var statsArray = [];
   chrome.storage.local.get('PDStats', function(items){
     var statsArray = items['PDStats'];
-    console.log(statsArray);
+    //console.log(statsArray);
     //await sleep(1);
     id = statsArray.length + 1;
     currentPage = getCurrentPage();
