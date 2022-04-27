@@ -3,20 +3,32 @@ let color = '#3aa757';
 var currentWebsite = "";
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ color });
+  //chrome.storage.sync.set({ color });
   //console.log('Default background color set to %cgreen', `color: ${color}`);
-  console.log("Plugin up and running");
+  var d = Date.now();
+  d = new Date(d);
+  d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+
+  console.log(d, "Plugin up and running");
 });
 
 
 //set default settings
 chrome.storage.sync.set({'PDactivationStatus': true}, function() {});
 chrome.storage.sync.set({'PDsetBGColor': false}, function() {});
-chrome.storage.sync.set({'PDblockEntries': true}, function() {});
+chrome.storage.sync.set({'PDShareData': true}, function() {});
 chrome.storage.sync.set({'PDlanguage': "german"}, function() {});
 chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
-chrome.storage.sync.set({'PDStats': []}, function() {});
-chrome.storage.sync.set({'PDopenPageInfos': []}, function() {});
+chrome.storage.sync.get('PDStats', function(items){
+  if(items['PDStesttatus'] == undefined){
+    chrome.storage.sync.set({'PDStats': []}, function() {});
+  }
+});
+chrome.storage.sync.get('PDopenPageInfos', function(items){
+  if(items['PDopenPageInfos'] == undefined){
+    chrome.storage.sync.set({'PDopenPageInfos': []}, function() {});
+  }
+});
 
 //Listen for messages and run ap VTT Check if requested
 chrome.runtime.onMessage.addListener(
