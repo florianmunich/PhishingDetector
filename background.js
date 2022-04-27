@@ -20,10 +20,19 @@ chrome.storage.sync.set({'PDShareData': true}, function() {});
 chrome.storage.sync.set({'PDlanguage': "german"}, function() {});
 chrome.storage.sync.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
 chrome.storage.sync.get('PDStats', function(items){
-  if(items['PDStesttatus'] == undefined){
-    chrome.storage.sync.set({'PDStats': []}, function() {});
+  if(items['PDStats'] == undefined){
+    var d = Date.now();
+    d = new Date(d);
+    d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+    chrome.storage.sync.set({'PDStats': [d, 'Plugin up and running']}, function() {});
   }
 });
+//For testing StatsArray immer nullen
+/* var d = Date.now();
+d = new Date(d);
+d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+chrome.storage.sync.set({'PDStats': [d, 'Plugin up and running']}, function() {}); */
+
 chrome.storage.sync.get('PDopenPageInfos', function(items){
   if(items['PDopenPageInfos'] == undefined){
     chrome.storage.sync.set({'PDopenPageInfos': []}, function() {});
@@ -35,15 +44,21 @@ chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     //console.log(request.VTTtoCheckURL);
     if(request.VTTtoCheckURL === "safeSite"){
+      //console.log("safe BG");
       chrome.action.setIcon({path: "/images/colors/logo_green_16.png", tabId: sender.tab.id});
+      writeStats('Popup icon set to green (safeSite)');
     }
     else if(request.VTTtoCheckURL === "unknownSite"){
+      //console.log("unknown BG");
       chrome.action.setIcon({path: "/images/colors/logo_yellow_16.png", tabId: sender.tab.id});
+      writeStats('Popup icon set to yellow (unknownSite)');
     }
     else if(request.VTTtoCheckURL === "warningSite"){
+      //console.log("warning BG");
       chrome.action.setIcon({path: "/images/colors/logo_red_16.png", tabId: sender.tab.id});
       chrome.action.setBadgeText({text: '!!', tabId: sender.tab.id});
       chrome.action.setBadgeBackgroundColor({color: [255,0,0,255], tabId: sender.tab.id});
+      writeStats('Popup icon set to red (warningSite)');
     }
     else if (request.VTTtoCheckURL === "VTTcheck"){
       console.log("VTT initiated: " + sender.tab.url);
@@ -64,8 +79,10 @@ chrome.runtime.onMessage.addListener(
         fetch(fetchURL, options)
             .then(response => response.json())
             .then(response => sendResponse({VTTresult: response.data.attributes.last_analysis_stats}))
-            .catch(err => writeStats('VTTError'))
-            .catch(err => console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!'));
+            .catch(err => {
+              writeStats('VTTError');
+              console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
+            });
     }
     else if(request.VTTtoCheckURL === "getCurrentTabURL"){
       //console.log("URL request bekommen");
@@ -86,23 +103,33 @@ chrome.runtime.onMessage.addListener(
   console.log(activeInfo.tabId);
 }); */
 
-async function getCurrentPage(){
+function getCurrentPage(){
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         return tabs[0].url;
     });
 }
 
-function writeStats(type) {
+async function writeStats(type) {
   //var statsArray = [];
   chrome.storage.sync.get('PDStats', function(items){
     var statsArray = items['PDStats'];
-      //console.log(statsArray);
+    console.log(statsArray);
     //await sleep(1);
     id = statsArray.length + 1;
-    statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
+    currentPage = getCurrentPage();
+    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+      statsArray.push([Date.now(), id, type, 'none', 'none', tabs[0].url.toString().split('/')[2]]);
+      if(statsArray.length < 2){
+        console.log("Error writing stats!!!!!!!"); 
+        console.log(id, type, tabs[0].url);
+        return;
+      }
+      chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+    });
+    
     //await sleep(1);
     //console.log(statsArray);
-    chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+    
   });
 
 }

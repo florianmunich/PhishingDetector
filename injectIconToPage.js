@@ -121,9 +121,10 @@ async function main(){
     }
 
     processStatus(true);
-
+    await sleep(5);
     //check site with virustotal
     if(!warningSite && !safeSite){
+        console.log("Neither safe nor unsafe so far");
         chrome.storage.sync.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             infoArray = deleteCurrentSiteFromArray(infoArray);
