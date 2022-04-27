@@ -49,7 +49,7 @@ chrome.runtime.onMessage.addListener(
       console.log("VTT initiated: " + sender.tab.url);
       url = sender.tab.url.split('/')[0] + '/' + sender.tab.url.split('/')[1] + '/' + sender.tab.url.split('/')[2]
       //url = "https://google.com";
-      console.log(" VTT Scan started for: " + url);
+      console.log("VTT Scan started for: " + url);
         fetchURL = 'https://www.virustotal.com/api/v3/urls/' + btoa(url);
 
         const options = {
@@ -64,6 +64,7 @@ chrome.runtime.onMessage.addListener(
         fetch(fetchURL, options)
             .then(response => response.json())
             .then(response => sendResponse({VTTresult: response.data.attributes.last_analysis_stats}))
+            .catch(err => writeStats('VTTError'))
             .catch(err => console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!'));
     }
     else if(request.VTTtoCheckURL === "getCurrentTabURL"){
@@ -89,4 +90,19 @@ async function getCurrentPage(){
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         return tabs[0].url;
     });
+}
+
+function writeStats(type) {
+  //var statsArray = [];
+  chrome.storage.sync.get('PDStats', function(items){
+    var statsArray = items['PDStats'];
+      //console.log(statsArray);
+    //await sleep(1);
+    id = statsArray.length + 1;
+    statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
+    //await sleep(1);
+    //console.log(statsArray);
+    chrome.storage.sync.set({'PDStats': statsArray}, function() {});
+  });
+
 }
