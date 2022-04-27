@@ -58,7 +58,6 @@ async function handleSettingClick(event) {
       general_function = items["PDactivationStatus"];
       if(general_function){
         if(setting == "PDsetBGColor") {
-          console.log("TOSET: ", currentSettingStatus);
           chrome.storage.local.set({"PDsetBGColor": currentSettingStatus}, function() {});
           writeStats('PDsetBGColor set to ' + currentSettingStatus);
         }
@@ -111,11 +110,9 @@ async function init(){
   var currentPageJustification = pageInfos.appendChild(createElementWithClass('div', 'currentPageJustification'));
   currentPageText.innerHTML = texts.texts.currentPage.currentPageText[language];
   await chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabURL"}, function(response) {
-    //console.log(response);
     currentSiteShort = response.currentURL;
     chrome.storage.local.get('PDopenPageInfos', function(items){
       knownSites = items['PDopenPageInfos'];
-      console.log("known Sites: ", knownSites);
       var siteInKnown = false;
       for (site of knownSites){
         if(site[0] == currentSiteShort){
@@ -126,7 +123,6 @@ async function init(){
             VTTStats = site[3];
           }
           setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = siteStatus, warningReason = siteReason);
-          console.log(siteStatus,siteReason, "writing stats soon");
           writeStats("popup");
           siteInKnown = true;
           break;
@@ -137,7 +133,6 @@ async function init(){
         siteStatus = "unknown";
         siteReason = "noScan";
         setIdentifierText(pageInfos, currentSite = '', warningType = 'unknown', warningReason = 'notOpened');
-        console.log(siteStatus,siteReason, "writing stats soon");
         writeStats("popup");
       }
     });
@@ -246,10 +241,8 @@ async function init(){
 }
 
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
-  console.log(htmlObject, currentSite, warningType, warningReason, VTTStats);
   htmlObject.classList.add(warningType);
   document.body.classList.add(warningType);
-  //console.log(warningType, warningReason);
   htmlObject.childNodes[1].childNodes[1].innerHTML = texts.texts.currentPage.shortIndication[warningType][language];
   htmlObject.childNodes[2].innerHTML = currentSite + texts.texts.currentPage.justification[warningType][warningReason][language];
   var logoSVG = document.getElementsByClassName('currentPageIMG')[0];
@@ -258,7 +251,6 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     case 'unknown': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_yellow.svg'); break;
     case 'safe': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_green.svg'); break;
   }
-  console.log(VTTStats);
   if(VTTStats != null){
     //Display results
     resultText = texts.texts.currentPage.justification.VTTText.result[language];
@@ -274,7 +266,6 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     //Link results
     var VTTResultsLink = createElementWithClass('a', 'VTTResultsLink');
     var currentSiteB64 = btoa(currentSite).replaceAll('=', '');//Somehow, VTT can't handle '='
-    console.log(currentSite, currentSiteB64);
     VTTResultsLink.setAttribute('href', 'https://www.virustotal.com/gui/url/' + currentSiteB64);
     VTTResultsLink.setAttribute('target', '_blank');
     VTTResultsLink.innerHTML = texts.texts.currentPage.justification.VTTText.retrieve[language];
@@ -370,34 +361,44 @@ function downloadStats() {
       statsArrayString += entry + "\n";
     }
 
-    chrome.storage.local.get('PDopenPageInfos', function(items){
-      statsArrayString += "\n\n\nCurrently known pages:\n";
-      statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
-      openPages = statsArray = items['PDopenPageInfos'];
+    chrome.storage.local.get('PDLastInjections', function(items){
+      var injectionArray = items['PDLastInjections'];
+      statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning]\n";
       for (entry of openPages){
         statsArrayString += entry + "\n";
       }
-      console.log(statsArrayString);
+
+      //aditionally get currently known sites
+      chrome.storage.local.get('PDopenPageInfos', function(items){
+        statsArrayString += "\n\n\nCurrently known pages:\n";
+        statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
+        openPages = statsArray = items['PDopenPageInfos'];
+        for (entry of openPages){
+          statsArrayString += entry + "\n";
+        }
+        console.log(statsArrayString);
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+      
+        document.body.removeChild(element);
+      });
+
+      //Einkommentieren, wenn wieder NUR das StatsArray runtergeladen werden soll
+  /*     console.log(statsArrayString);
       element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
       element.setAttribute('download', filename);
+    
       element.style.display = 'none';
       document.body.appendChild(element);
+    
       element.click();
     
-      document.body.removeChild(element);
+      document.body.removeChild(element); */
     });
-
-    //Einkommentieren, wenn wieder NUR das StatsArray runtergeladen werden soll
-/*     console.log(statsArrayString);
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
-    element.setAttribute('download', filename);
-  
-    element.style.display = 'none';
-    document.body.appendChild(element);
-  
-    element.click();
-  
-    document.body.removeChild(element); */
   });
 
 }
@@ -406,12 +407,8 @@ function writeStats(type) {
   //var statsArray = [];
   chrome.storage.local.get('PDStats', function(items){
     var statsArray = items['PDStats'];
-      //console.log(statsArray);
-    //await sleep(1);
     id = statsArray.length + 1;
     statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
-    //await sleep(1);
-    //console.log(statsArray);
     chrome.storage.local.set({'PDStats': statsArray}, function() {});
   });
 
