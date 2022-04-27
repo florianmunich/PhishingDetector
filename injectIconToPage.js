@@ -88,6 +88,7 @@ async function main(){
                 }
             });
             siteStatus = "safe";
+            chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
         }
         if(warningSite){
             console.log("warning site!");
@@ -112,6 +113,10 @@ async function main(){
                 }
             });
             siteStatus = "warning";
+            chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
+        }
+        if(!warningSite && !safeSite){
+            chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
         }
     }
 
