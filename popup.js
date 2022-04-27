@@ -364,7 +364,7 @@ function downloadStats() {
     chrome.storage.local.get('PDLastInjections', function(items){
       var injectionArray = items['PDLastInjections'];
       statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning]\n";
-      for (entry of openPages){
+      for (entry of injectionArray){
         statsArrayString += entry + "\n";
       }
 
