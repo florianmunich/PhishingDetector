@@ -358,18 +358,37 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   }
 } */
 
-async function downloadStats() {
+function downloadStats() {
   filename = "PDStats";
   statsArray = []
-  await chrome.storage.sync.get('PDStats', function(items){
+  chrome.storage.sync.get('PDStats', function(items){
     statsArray = items['PDStats'];
     console.log(statsArray);
     var element = document.createElement('a');
-    var statsArrayString = "";
+    var statsArrayString = "[timestamp, id, action performed, siteStatus, reason, pageURL]\n";
     for (entry of statsArray){
       statsArrayString += entry + "\n";
     }
-    console.log(statsArrayString);
+
+    chrome.storage.sync.get('PDopenPageInfos', function(items){
+      statsArrayString += "\n\n\nCurrently known pages:\n";
+      statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
+      openPages = statsArray = items['PDopenPageInfos'];
+      for (entry of openPages){
+        statsArrayString += entry + "\n";
+      }
+      console.log(statsArrayString);
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+    
+      document.body.removeChild(element);
+    });
+
+    //Einkommentieren, wenn wieder NUR das StatsArray runtergeladen werden soll
+/*     console.log(statsArrayString);
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
     element.setAttribute('download', filename);
   
@@ -378,7 +397,7 @@ async function downloadStats() {
   
     element.click();
   
-    document.body.removeChild(element);
+    document.body.removeChild(element); */
   });
 
 }
