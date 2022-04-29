@@ -127,9 +127,10 @@ function processStatus(writeStatus, VTTarray){
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             if(infoArray.length>100){infoArray.pop()}
-            infoArray = [[currentSiteShort, "warning", siteReason, VTTarray]].concat(infoArray);
-            if(writeStatus) {
+            if(writeStatus){
                 infoArray = deleteCurrentSiteFromArray(infoArray);
+                infoArray = [[currentSiteShort, "warning", siteReason, VTTarray]].concat(infoArray);
+                console.log(infoArray);
                 chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
             }
         });
@@ -242,19 +243,19 @@ async function getVirusTotalInfo(backoff) {
 /*      totalVotes = 100;
         negativeVotes = 20;
         positiveVotes = 10; */
-        if(totalVotes > 50) {
-            if(negativeVotes > 10){ //TODO: Sinnvollen Wert finden!
+        if(totalVotes > 10) {
+            if(negativeVotes > 0){ //As on the blacklist some sites only have 1 vendor who flags it as malicoius
                 console.log("virus scan: warning");
                 warningSite = true;
                 safeSite = false;
-                processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
             }
             else {
                 warningSite = false;
                 safeSite = true;
-                processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
+                
             }
             siteReason = 'VTTScan';
+            processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
         }
         else{getVirusTotalInfo(1000);}
       });
