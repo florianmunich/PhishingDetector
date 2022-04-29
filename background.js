@@ -25,7 +25,7 @@ chrome.storage.local.get('PDStats', function(items){
     var d = Date.now();
     d = new Date(d);
     d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-    chrome.storage.local.set({'PDStats': [d, 'Plugin up and running']}, function() {});
+    chrome.storage.local.set({'PDStats': [Date.now(), d, 'Plugin up and running']}, function() {});
   }
 });
 //For testing StatsArray immer nullen
@@ -40,7 +40,7 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
   }
 });
 //Für testing known sites immer nullen
-chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
+//chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
 
 chrome.storage.local.get('PDLastInjections', function(items){
   if(items['PDLastInjections'] == undefined){
