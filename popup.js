@@ -370,9 +370,10 @@ function downloadStats() {
 
       //aditionally get currently known sites
       chrome.storage.local.get('PDopenPageInfos', function(items){
-        statsArrayString += "\n\n\nCurrently known pages:\n";
-        statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
         openPages = statsArray = items['PDopenPageInfos'];
+        statsArrayString += "\n\n\nCurrently known pages: " + openPages.length + "\n";
+        statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
+        
         for (entry of openPages){
           statsArrayString += entry + "\n";
         }
