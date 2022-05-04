@@ -52,7 +52,8 @@ async function main(){
         var infoArray = items['PDopenPageInfos'];
         for (site of infoArray){
             if(site[0] == currentSiteShort){
-                console.log("Page found in recently visited pages!");
+                console.log("Page found in recently visited pages:");
+                console.log(infoArray);
                 var VTTinfos = null;
                 siteStatus = site[1];
                 siteReason = site[2];
@@ -74,13 +75,12 @@ async function main(){
         await declareSites();
         warningSite = await siteInSuspected(currentSite);
         safeSite = await siteInSafe(currentSite);
-        processStatus(true,[]);
+        processStatus(true, []);
     }
 
     await sleep(5);
     //check site with virustotal
     if(!warningSite && !safeSite){
-        console.log("Neither safe nor unsafe so far");
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             infoArray = deleteCurrentSiteFromArray(infoArray);
@@ -244,7 +244,7 @@ async function getVirusTotalInfo(backoff) {
         negativeVotes = 20;
         positiveVotes = 10; */
         if(totalVotes > 10) {
-            if(negativeVotes > 0){ //As on the blacklist some sites only have 1 vendor who flags it as malicoius
+            if(negativeVotes > 1){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
                 console.log("virus scan: warning");
                 warningSite = true;
                 safeSite = false;
