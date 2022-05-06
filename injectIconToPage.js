@@ -89,7 +89,6 @@ async function main(){
             infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
             chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
         });
-        //chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
         siteStatus = "unknown";
         siteReason = "noScan";
         //TODO: Await wartet nicht, da kein Promise da ist
@@ -400,10 +399,6 @@ function warning(){
     siteInfoText.classList.add('siteInfotextWarning');
     appendTexts("warning", siteReason);
     appendLeaveButton();
-
-
-/*     var values = [currentSiteShort, "warning", reason];
-    chrome.storage.local.set({'PDcurrentSiteInfos': values}, function() {}); */
 }
 
 //Erstellt alle Infos für den Fall einer sicheren Seite
@@ -576,6 +571,10 @@ var texts = {
                     "VTTScan": {
                         "english": "Reason: We ran a virus scan of this page!",
                         "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
+                    },
+                    "userOverwrite": {
+                      "english": " was detected as fradulent by us, but you marked it as safe.",
+                      "german": "wurde von uns als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert."
                     }
                 },
                 "unknown": {

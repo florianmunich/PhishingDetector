@@ -125,6 +125,14 @@ async function init(){
           setIdentifierText(pageInfos, currentSite = currentSiteShort, warningType = siteStatus, warningReason = siteReason);
           writeStats("popup");
           siteInKnown = true;
+          //At warning, offer the option to declare as safe manually
+          if(siteStatus == "warning"){
+            var clickSafeButton = createElementWithClass('button', 'clickSafeButton');
+            clickSafeButton.innerHTML = texts.texts.currentPage.justification.markAsSafe.markSafeButton[language];
+            clickSafeButton.setAttribute('id', 'clickSafeButton');
+            clickSafeButton.addEventListener('click', markAsSafeSite);
+            document.getElementsByClassName("pageInfos warning")[0].appendChild(clickSafeButton);
+          }
           break;
         }
       }
@@ -274,80 +282,51 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
 
 }
 
-//Does not work, as current page is popup window
-/* async function analyzePage() {
-  var allKnownSites;
-
-  //Lädt die Liste der bekannten Seiten herunter
-  async function getknownSites() {
-    await fetch(safeSiteURL)
-    .then(res => res.json())
-    .then((out) => {allKnownSites = out;
-    });
-  }
-
-  //ruft Liste der bekannten Seiten ab und liest Phishing/Safe Seiten in Arrays aus
-  async function declareSites(){
-    await getknownSites();
-    phishingSites = allKnownSites.phishingSites;
-    safeSites = allKnownSites.safeSites;
-  }
-
-  //Checkt ob eine gegebene Seite in der Blacklist auftaucht
-  async function siteInSuspected(site){
-    for(let phishingSiteIndex in phishingSites){
-        phishingSite = phishingSites[phishingSiteIndex].url;
-        if (site.includes(phishingSite)){
-            console.log("Site\n" + site + "\n was suspected.");
-            return true;
+function markAsSafeSite() {
+  document.getElementById('clickSafeButton').remove();
+  var questionContainer = createElementWithClass('div', 'questionContainer');
+  questionContainer.setAttribute('id', 'questionContainer');
+  var question = createElementWithClass('div', 'sureQuestion');
+  var sureNo = createElementWithClass('button', 'sure sureNo');
+  var sureYes = createElementWithClass('button', 'sure sureYes');
+  question.innerHTML = texts.texts.currentPage.justification.markAsSafe.doubleCheck.question[language];
+  sureNo.innerHTML = texts.texts.currentPage.justification.markAsSafe.doubleCheck.answerNo[language];
+  sureYes.innerHTML = texts.texts.currentPage.justification.markAsSafe.doubleCheck.answerYes[language];
+  questionContainer.appendChild(question);
+  questionContainer.appendChild(sureNo);
+  questionContainer.appendChild(sureYes);
+  
+  function doubleYes(){
+    console.log("Marked as safe");
+    document.getElementById('questionContainer').remove();
+    chrome.storage.local.get("PDopenPageInfos", function(items){
+      var infoArray = items['PDopenPageInfos'];
+      if(infoArray.length> 1000){infoArray.pop()}
+      //removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
+      function deleteCurrentSiteFromArray(infoArray) {
+        var index = 0;
+        for (site of infoArray){
+            if(site[0] == currentSiteShort){
+                infoArray.splice(index, 1);
+                //break;
+            }
+            index += 1;
         }
-    }
-    return false;
+        return infoArray;
+      }
+      infoArray = deleteCurrentSiteFromArray(infoArray);
+      infoArray = [[currentSiteShort, "safe", "userOverwrite", []]].concat(infoArray);
+      chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
+      chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
+  });
   }
-
-  //Checkt ob eine gegebene Seite in der Whitelist auftaucht
-  async function siteInSafe(site){
-    for(let safeSiteIndex in safeSites){
-        safeSite = "https://" + safeSites[safeSiteIndex].url;
-        if(site.includes(safeSite)){
-            console.log("Site\n" + site + "\n was considered safe.");
-            return true;
-        }
-    }
-    return false;
+  function doubleNo(){
+    document.getElementById('questionContainer').remove();
   }
-
-  var currentSite = window.location.toString();
-  var currentSiteShort = window.location.toString().split('/')[2];
-
-  await declareSites();
-
-  //check site and write current information in Chrome storage
-  var phishingSite = await siteInSuspected(currentSite);
-  var safeSite = await siteInSafe(currentSite);
-
-  console.log("analyzze: " + currentSite + phishingSite + safeSite);
-
-  if(safeSite){
-    chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "safe", "whitelist"]}, function() {});
-  }
-  if(phishingSite){
-      chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "warning", "blacklist"]}, function() {});
-
-      //Set Background color to red if enabled
-      chrome.storage.local.get("PDsetBGColor", function(items){
-          enabled = items['PDsetBGColor'];
-          if(enabled)
-              document.body.style.backgroundColor = 'red';
-              //TODO: Wieder neutral setzen danach!!!
-      });
-  }
-  if(!phishingSite && !safeSite){
-      console.log("VTT Necessary!");
-      //getVirusTotalInfo("https://sebhastian.com/javascript-create-button/");
-      chrome.storage.local.set({'PDcurrentSiteInfos': [currentSiteShort, "unknown", "noScan"]}, function() {});
-  }
-} */
+  sureYes.addEventListener('click', doubleYes);
+  sureNo.addEventListener('click', doubleNo);
+  document.getElementsByClassName("pageInfos warning")[0].appendChild(questionContainer);
+}
 
 function downloadStats() {
   filename = "PDStats";
@@ -453,8 +432,8 @@ texts = {
             "german": " haben wir in unserer Datenbank sch&auml;dlicher Webseiten gefunden. Geben Sie hier KEINE Daten ein, da der Betreiber der Seite ein Betr&uuml;ger ist."
           },
           "VTTScan": {
-            "english": " was found unsafe by running a virus scan!",
-            "german" : " wurde nach Durchf&uuml;hren von Virenscans als unsicher befunden!"
+            "english": " was found unsafe by previous virus scans!",
+            "german" : " wurde von vorherigen Virenscans als unsicher befunden!"
           }
         },
         "safe": {
@@ -463,8 +442,12 @@ texts = {
             "german": " haben wir in unserer Datenbank sicherer Webseiten gefunden. Sie k&ouml;nnen Ihre Daten hier ohne Bedenken eingeben."
           },
           "VTTScan": {
-            "english": " was found safe by running a virus scan!",
-            "german" : " wurde nach Durchf&uuml;hren von Virenscans als sicher befunden!"
+            "english": " was found safe by previous virus scans!",
+            "german" : " wurde von vorherigen Virenscans als sicher befunden!"
+          },
+          "userOverwrite": {
+            "english": " was detected as fradulent by us, but you marked it as safe.",
+            "german": "wurde von uns als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert."
           }
         },
         "unknown": {
@@ -501,6 +484,26 @@ texts = {
           "retrieve": {
             "english": "View results",
             "german": "Ergebnis ansehen"
+          }
+        },
+        "markAsSafe": {
+          "markSafeButton": {
+            "english": "I trust this page - Mark as safe",
+            "german": "Ich vertraue dieser Seite, als sicher markieren"
+          },
+          "doubleCheck": {
+            "question": {
+              "english": "Are you sure you want to mark the page as safe?",
+              "german": "Sind Sie sicher, dass Sie die Seite als sicher markieren wollen?"
+            },
+            "answerYes":{
+              "english": "Yes",
+              "german": "Ja"
+            },
+            "answerNo": {
+              "english": "No",
+              "german": "Nein"
+            }
           }
         }
       }
