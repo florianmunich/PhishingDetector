@@ -354,7 +354,6 @@ function downloadStats() {
   statsArray = []
   chrome.storage.local.get('PDStats', function(items){
     statsArray = items['PDStats'];
-    console.log(statsArray);
     var element = document.createElement('a');
     var statsArrayString = "[timestamp, id, action performed, siteStatus, reason, pageURL]\n";
     for (entry of statsArray){
@@ -363,9 +362,11 @@ function downloadStats() {
 
     chrome.storage.local.get('PDLastInjections', function(items){
       var injectionArray = items['PDLastInjections'];
-      statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning]\n";
+      statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
       for (entry of injectionArray){
-        statsArrayString += entry + "\n";
+        d = new Date(entry);
+        d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+        statsArrayString += entry + ": " + d + "\n";
       }
 
       //aditionally get currently known sites
@@ -377,7 +378,6 @@ function downloadStats() {
         for (entry of openPages){
           statsArrayString += entry + "\n";
         }
-        console.log(statsArrayString);
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
         element.setAttribute('download', filename);
         element.style.display = 'none';
