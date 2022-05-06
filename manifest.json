@@ -9,7 +9,7 @@
     "content_scripts":[
       {
         "matches": ["<all_urls>"],
-        "js": ["injectIconToPage.js", "require.js"],
+        "js": ["injectIconToPage.js"],
         "css": ["injectIconToPage.css"]
       }
     ],
