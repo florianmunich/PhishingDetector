@@ -12,7 +12,7 @@ var warningSite = false;
 var safeSite = false;
 var VTTattempts = 0;
 var siteFromKnown = false;
-const maxKnownPages = 100;
+const maxKnownPages = 1000;
 
 var language = "english"; //Default, can be overwritten by chrome storage
 
