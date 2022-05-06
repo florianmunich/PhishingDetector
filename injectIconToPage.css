@@ -64,10 +64,6 @@
     text-align: center;
     background-color: white;
     border-radius: 10px;
-
-/*     wird noch nicht angezeigt
- */    outline-color: #808080;
-    outline-width: 2px;
 }
 
 .hoverContainerBackground div{
@@ -93,7 +89,7 @@
 }
 
 .boxLowerPart {
-    background-color: #F0F0F0;
+    background-color: #eeeeee;
     color: black;
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
