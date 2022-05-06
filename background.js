@@ -44,7 +44,8 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
 
 chrome.storage.local.get('PDLastInjections', function(items){
   if(items['PDLastInjections'] == undefined){
-    chrome.storage.local.set({'PDLastInjections': [Date.now(), Date.now(), Date.now(), Date.now()]}, function() {});
+    //[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]
+    chrome.storage.local.set({'PDLastInjections': [Date.now(), Date.now(), Date.now(), Date.now(), Date.now()]}, function() {});
   }
 });
 

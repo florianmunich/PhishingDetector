@@ -12,6 +12,7 @@ var warningSite = false;
 var safeSite = false;
 var VTTattempts = 0;
 var siteFromKnown = false;
+const maxKnownPages = 100;
 
 var language = "english"; //Default, can be overwritten by chrome storage
 
@@ -84,7 +85,7 @@ async function main(){
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             infoArray = deleteCurrentSiteFromArray(infoArray);
-            if(infoArray.length>100){infoArray.pop()}
+            if(infoArray.length> maxKnownPages){infoArray.pop()}
             infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
             chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
         });
@@ -105,13 +106,14 @@ async function main(){
         await inputPDIcon(pwElems);
         writeStats("icon");
     }
+    checkUpload()
 }
 
 function processStatus(writeStatus, VTTarray){
     if(safeSite){
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
-            if(infoArray.length>100){infoArray.pop()}
+            if(infoArray.length> maxKnownPages){infoArray.pop()}
             if(writeStatus){
                 infoArray = deleteCurrentSiteFromArray(infoArray);
                 infoArray = [[currentSiteShort, "safe", siteReason, VTTarray]].concat(infoArray);
@@ -126,7 +128,7 @@ function processStatus(writeStatus, VTTarray){
         console.log("warning site!");
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
-            if(infoArray.length>100){infoArray.pop()}
+            if(infoArray.length> maxKnownPages){infoArray.pop()}
             if(writeStatus){
                 infoArray = deleteCurrentSiteFromArray(infoArray);
                 infoArray = [[currentSiteShort, "warning", siteReason, VTTarray]].concat(infoArray);
@@ -455,8 +457,64 @@ function writeStats(type) {
         statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
         chrome.storage.local.set({'PDStats': statsArray}, function() {});
     });
-    
 }
+
+function checkUpload() {
+    chrome.storage.local.get('PDLastInjections', function(items){
+
+        function downloadStats() {
+            filename = "PDStats";
+            statsArray = []
+            chrome.storage.local.get('PDStats', function(items){
+              statsArray = items['PDStats'];
+              var element = document.createElement('a');
+              var statsArrayString = "[timestamp, id, action performed, siteStatus, reason, pageURL]\n";
+              for (entry of statsArray){
+                statsArrayString += entry + "\n";
+              }
+          
+              chrome.storage.local.get('PDLastInjections', function(items){
+                var injectionArray = items['PDLastInjections'];
+                statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
+                for (entry of injectionArray){
+                  d = new Date(entry);
+                  d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+                  statsArrayString += entry + ": " + d + "\n";
+                }
+          
+                //aditionally get currently known sites
+                chrome.storage.local.get('PDopenPageInfos', function(items){
+                  openPages = statsArray = items['PDopenPageInfos'];
+                  statsArrayString += "\n\n\nCurrently known pages: " + openPages.length + "\n";
+                  statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
+                  
+                  for (entry of openPages){
+                    statsArrayString += entry + "\n";
+                  }
+                  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+                  element.setAttribute('download', filename);
+                  element.style.display = 'none';
+                  document.body.appendChild(element);
+          
+                  element.click();
+                
+                  document.body.removeChild(element);
+                });
+              });
+            });
+          
+          }
+        var lastUpload = items['PDLastInjections'][4];
+        console.log(Date.now(), lastUpload, " Zeit seit letzem Download: " + (Date.now() - lastUpload)/1000 + "s");
+        if(Date.now() > lastUpload + 3600000){ //upload every hour, therefore every 3600.000 ms
+            downloadStats();
+            var pdLastInjectionsUpdate = items['PDLastInjections'];
+            pdLastInjectionsUpdate[4] = Date.now();
+            chrome.storage.local.set({'PDLastInjections': pdLastInjectionsUpdate}, function() {});
+        }
+    });
+}
+
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
 var texts = {
