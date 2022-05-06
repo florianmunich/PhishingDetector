@@ -70,7 +70,6 @@ async function main(){
     });
 
     await sleep(5);
-    //console.log(safeSite,warningSite);
     //check if site is in blacklist/whitelist
     if(!warningSite & !safeSite){
         await declareSites();
@@ -92,6 +91,7 @@ async function main(){
         siteStatus = "unknown";
         siteReason = "noScan";
         //TODO: Await wartet nicht, da kein Promise da ist
+        
         await getVirusTotalInfo(0);
         await sleep(1000);
 
@@ -253,7 +253,6 @@ async function getVirusTotalInfo(backoff) {
             else {
                 warningSite = false;
                 safeSite = true;
-                
             }
             siteReason = 'VTTScan';
             processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
@@ -564,7 +563,7 @@ var texts = {
                     }
                 },
                 "safe": {
-                    "database": {
+                    "whitelist": {
                         "english": "Reason: We found the site our database.",
                         "german" : "Grund: Wir haben die Seite in unserer Datenbank gefunden."
                     },
