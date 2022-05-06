@@ -2,12 +2,10 @@ let color = '#3aa757';
 
 var currentWebsite = "";
 var VTTApiKey = '';
+const installationTime = Date.now();
 
 chrome.runtime.onInstalled.addListener(() => {
-  //chrome.storage.local.set({ color });
-  //console.log('Default background color set to %cgreen', `color: ${color}`);
-  var d = Date.now();
-  d = new Date(d);
+  var d = new Date(installationTime);
   d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
 
   console.log(d, "Plugin up and running");
@@ -18,21 +16,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.storage.local.set({'PDactivationStatus': true}, function() {});
 chrome.storage.local.set({'PDsetBGColor': false}, function() {});
 chrome.storage.local.set({'PDShareData': true}, function() {});
-chrome.storage.local.set({'PDlanguage': "german"}, function() {});
-chrome.storage.local.set({'PDcurrentSiteInfos': ["PD_Default", "safe", "whitelist"]}, function() {});
-chrome.storage.local.get('PDStats', function(items){
-  if(items['PDStats'] == undefined){
-    var d = Date.now();
-    d = new Date(d);
-    d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-    chrome.storage.local.set({'PDStats': [Date.now(), d, 'Plugin up and running']}, function() {});
-  }
-});
-//For testing StatsArray immer nullen
-/* var d = Date.now();
-d = new Date(d);
-d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-chrome.storage.local.set({'PDStats': [d, 'Plugin up and running']}, function() {}); */
+chrome.storage.local.set({'PDlanguage': "english"}, function() {});
 
 chrome.storage.local.get('PDopenPageInfos', function(items){
   if(items['PDopenPageInfos'] == undefined){
@@ -42,10 +26,23 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
 //Für testing known sites immer nullen
 //chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
 
+chrome.storage.local.get('PDStats', function(items){
+  if(items['PDStats'] == undefined){
+    var d = new Date(installationTime);
+    d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+    chrome.storage.local.set({'PDStats': [installationTime, d, 'Plugin up and running']}, function() {});
+  }
+});
+//For testing StatsArray immer nullen
+/* var d = installationTime();
+d = new Date(d);
+d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+chrome.storage.local.set({'PDStats': [d, 'Plugin up and running']}, function() {}); */
+
 chrome.storage.local.get('PDLastInjections', function(items){
   if(items['PDLastInjections'] == undefined){
     //[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]
-    chrome.storage.local.set({'PDLastInjections': [Date.now(), Date.now(), Date.now(), Date.now(), Date.now()]}, function() {});
+    chrome.storage.local.set({'PDLastInjections': [installationTime, installationTime, installationTime, installationTime, installationTime]}, function() {});
   }
 });
 
