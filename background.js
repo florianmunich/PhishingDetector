@@ -1,18 +1,23 @@
-let color = '#3aa757';
-
-var currentWebsite = "";
+var currentWebsite = '';
 var VTTApiKey = '';
 const installationTime = Date.now();
+var PDID = Math.floor(Math.random() * Math.floor(Math.random() * Date.now()));
 
 chrome.runtime.onInstalled.addListener(() => {
   var d = new Date(installationTime);
   d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-
   console.log(d, "Plugin up and running");
 });
 
 
 //set default settings
+chrome.storage.local.get('PDIDNumberOfClient', function(items){
+  if(items['PDIDNumberOfClient'] == undefined){
+    chrome.storage.local.set({'PDIDNumberOfClient': PDID}, function() {});
+  }
+  else{PDID = items['PDIDNumberOfClient'];}
+});
+
 chrome.storage.local.set({'PDactivationStatus': true}, function() {});
 chrome.storage.local.set({'PDsetBGColor': false}, function() {});
 chrome.storage.local.set({'PDShareData': true}, function() {});
@@ -23,7 +28,6 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
     chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
   }
 });
-//Für testing known sites immer nullen
 //chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
 
 chrome.storage.local.get('PDStats', function(items){
@@ -156,10 +160,5 @@ async function writeStats(type) {
       }
       chrome.storage.local.set({'PDStats': statsArray}, function() {});
     });
-    
-    //await sleep(1);
-    //console.log(statsArray);
-    
   });
-
 }
