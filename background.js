@@ -3,9 +3,12 @@ var VTTApiKey = '';
 const installationTime = Date.now();
 var PDID = Math.floor(Math.random() * Math.floor(Math.random() * Date.now()));
 
+const MDBusername = 'participant';
+const MDBpassword = 'participant';
+
 chrome.runtime.onInstalled.addListener(() => {
   var d = new Date(installationTime);
-  d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
+  d = d.toISOString();
   console.log(d, "Plugin up and running");
 });
 
@@ -32,16 +35,11 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
 
 chrome.storage.local.get('PDStats', function(items){
   if(items['PDStats'] == undefined){
-    var d = new Date(installationTime);
-    d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-    chrome.storage.local.set({'PDStats': [installationTime, d, 'Plugin up and running']}, function() {});
+    chrome.storage.local.set({'PDStats': []}, function() {});
   }
 });
 //For testing StatsArray immer nullen
-/* var d = installationTime();
-d = new Date(d);
-d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-chrome.storage.local.set({'PDStats': [d, 'Plugin up and running']}, function() {}); */
+//chrome.storage.local.set({'PDStats': []}, function() {});
 
 chrome.storage.local.get('PDLastInjections', function(items){
   if(items['PDLastInjections'] == undefined){
@@ -57,19 +55,19 @@ chrome.runtime.onMessage.addListener(
     if(request.VTTtoCheckURL === "safeSite"){
       //console.log("safe BG");
       chrome.action.setIcon({path: "/images/colors/logo_green_16.png", tabId: sender.tab.id});
-      writeStats('Popup icon set to green (safeSite)');
+      writeStats('Popup icon set to green (safeSite)', sender.tab.id);
     }
     else if(request.VTTtoCheckURL === "unknownSite"){
       //console.log("unknown BG");
       chrome.action.setIcon({path: "/images/colors/logo_yellow_16.png", tabId: sender.tab.id});
-      writeStats('Popup icon set to yellow (unknownSite)');
+      writeStats('Popup icon set to yellow (unknownSite)', sender.tab.id);
     }
     else if(request.VTTtoCheckURL === "warningSite"){
       //console.log("warning BG");
       chrome.action.setIcon({path: "/images/colors/logo_red_16.png", tabId: sender.tab.id});
       chrome.action.setBadgeText({text: '!!', tabId: sender.tab.id});
       chrome.action.setBadgeBackgroundColor({color: [255,0,0,255], tabId: sender.tab.id});
-      writeStats('Popup icon set to red (warningSite)');
+      writeStats('Popup icon set to red (warningSite)', sender.tab.id);
     }
     else if (request.VTTtoCheckURL === "VTTcheck"){
       console.log("VTT grabbing report initiated: " + sender.tab.url);
@@ -91,7 +89,7 @@ chrome.runtime.onMessage.addListener(
             .then(response => response.json())
             .then(response => sendResponse({VTTresult: response}))
             .catch(err => {
-              writeStats('VTTError');
+              writeStats('VTTError', sender.tab.id);
               console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
             });
     }
@@ -114,7 +112,7 @@ chrome.runtime.onMessage.addListener(
           .then(response => response.json())
           .then(response => sendResponse({VTTresult: response}))
           .catch(err => {
-            writeStats('VTTError');
+            writeStats('VTTError', sender.tab.id);
             console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
           });
     }
@@ -124,8 +122,10 @@ chrome.runtime.onMessage.addListener(
         let url = tabs[0].url;
         urlShort = url.split('/')[2];
         sendResponse({currentURL: urlShort});
-    });
-      
+      });
+    }
+    else if(request.VTTtoCheckURL === "getCurrentTabID"){
+      sendResponse({currentID: sender.tab.id})
     }
     //sendResponse({VTTresult: "some test return"})
     return true;
@@ -143,16 +143,16 @@ function getCurrentPage(){
     });
 }
 
-async function writeStats(type) {
+async function writeStats(type, tabID) {
   //var statsArray = [];
   chrome.storage.local.get('PDStats', function(items){
     var statsArray = items['PDStats'];
     //console.log(statsArray);
     //await sleep(1);
-    id = statsArray.length + 1;
+    id = statsArray.length;
     currentPage = getCurrentPage();
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-      statsArray.push([Date.now(), id, type, 'none', 'none', tabs[0].url.toString().split('/')[2]]);
+      statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabs[0].url.toString().split('/')[2]]);
       if(statsArray.length < 2){
         console.log("Error writing stats!!!!!!!"); 
         console.log(id, type, tabs[0].url);

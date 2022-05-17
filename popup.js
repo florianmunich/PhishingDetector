@@ -315,7 +315,7 @@ function markAsSafeSite() {
         return infoArray;
       }
       infoArray = deleteCurrentSiteFromArray(infoArray);
-      infoArray = [[currentSiteShort, "safe", "userOverwrite", []]].concat(infoArray);
+      infoArray = [[currentSiteShort, "safe", "userOverwrite", "[]"]].concat(infoArray);
       chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
       chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
   });
@@ -387,9 +387,13 @@ function writeStats(type) {
   //var statsArray = [];
   chrome.storage.local.get('PDStats', function(items){
     var statsArray = items['PDStats'];
-    id = statsArray.length + 1;
-    statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
-    chrome.storage.local.set({'PDStats': statsArray}, function() {});
+    id = statsArray.length;
+    chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabID"}, function(response) {
+      var tabID = response.currentID;
+      statsArray.push([Date.now(), id, type, siteStatus, siteReason, tabID, currentSiteShort]);
+      chrome.storage.local.set({'PDStats': statsArray}, function() {});
+    });
+
   });
 
 }
