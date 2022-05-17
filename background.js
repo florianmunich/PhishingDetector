@@ -144,21 +144,26 @@ function getCurrentPage(){
 }
 
 async function writeStats(type, tabID) {
-  //var statsArray = [];
-  chrome.storage.local.get('PDStats', function(items){
-    var statsArray = items['PDStats'];
-    //console.log(statsArray);
-    //await sleep(1);
-    id = statsArray.length;
-    currentPage = getCurrentPage();
-    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-      statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabs[0].url.toString().split('/')[2]]);
-      if(statsArray.length < 2){
-        console.log("Error writing stats!!!!!!!"); 
-        console.log(id, type, tabs[0].url);
-        return;
-      }
-      chrome.storage.local.set({'PDStats': statsArray}, function() {});
-    });
+  chrome.storage.local.get('PDShareData', function(items) {
+    if(items['PDShareData'] == false){return;}
+    else{
+      console.log("WritingStats");
+      chrome.storage.local.get('PDStats', function(items){
+        var statsArray = items['PDStats'];
+        //console.log(statsArray);
+        //await sleep(1);
+        id = statsArray.length;
+        currentPage = getCurrentPage();
+        chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+          statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabs[0].url.toString().split('/')[2]]);
+          if(statsArray.length < 2){
+            console.log("Error writing stats!!!!!!!"); 
+            console.log(id, type, tabs[0].url);
+            return;
+          }
+          chrome.storage.local.set({'PDStats': statsArray}, function() {});
+        });
+      });
+    }
   });
 }
