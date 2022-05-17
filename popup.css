@@ -129,7 +129,8 @@ body.unknown{
 }
 
 .settingInfos {
-    width: 260px;
+    width: 255px;
+    margin-right: 5px;
 }
 
 .languageSelectionBox {
