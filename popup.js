@@ -62,8 +62,8 @@ async function handleSettingClick(event) {
           writeStats('PDsetBGColor set to ' + currentSettingStatus);
         }
         else if(setting == "PDShareData") {
-          chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {});
           writeStats('PDShareData set to ' + currentSettingStatus);
+          handleStatsSharing(currentSettingStatus);
         }
       }
     });
@@ -72,6 +72,11 @@ async function handleSettingClick(event) {
   chrome.storage.local.get(setting, function(items){
     console.log("Option set to: " + items[setting]);
   });
+}
+
+async function handleStatsSharing(currentSettingStatus) {
+  await sleep(50);
+  chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {});
 }
 
 async function init(){
@@ -238,9 +243,9 @@ async function init(){
   infoText.innerHTML = texts.texts.infoBox.infoText[language];
 
   //Download Stats
-  var downloadStatsButton = container.appendChild(createElementWithClass('button', 'downloadStatsButton'));
+  /* var downloadStatsButton = container.appendChild(createElementWithClass('button', 'downloadStatsButton'));
   downloadStatsButton.innerHTML = "Download Statistics";
-  downloadStatsButton.addEventListener('click', downloadStats);
+  downloadStatsButton.addEventListener('click', downloadStats); */
 
   //Add container to page
   document.body.appendChild(container);
@@ -328,6 +333,7 @@ function markAsSafeSite() {
   document.getElementsByClassName("pageInfos warning")[0].appendChild(questionContainer);
 }
 
+//unused!!
 function downloadStats() {
   filename = "PDStats";
   statsArray = []
@@ -384,19 +390,20 @@ function downloadStats() {
 }
 
 function writeStats(type) {
-  //var statsArray = [];
-  chrome.storage.local.get('PDStats', function(items){
-    var statsArray = items['PDStats'];
-    id = statsArray.length;
-    chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabID"}, function(response) {
-      var tabID = response.currentID;
-      statsArray.push([Date.now(), id, type, siteStatus, siteReason, tabID, currentSiteShort]);
-      chrome.storage.local.set({'PDStats': statsArray}, function() {});
-    });
+  chrome.storage.local.get('PDShareData', function(items) {
+      if(items['PDShareData'] == false) return;
+      else{
+          chrome.storage.local.get('PDStats', function(items){
+              var statsArray = items['PDStats'];
+              id = statsArray.length;
+              statsArray.push([Date.now(), id, type, siteStatus, siteReason, 99999, currentSiteShort]);
+              chrome.storage.local.set({'PDStats': statsArray}, function() {});
 
+          });
+      }
   });
-
 }
+
 
 //Beinhaltet alle Texte der Extension auf Englisch und Deutsch
 texts = {
