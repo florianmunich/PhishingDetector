@@ -15,8 +15,9 @@ var siteFromKnown = false;
 const maxKnownPages = 1000;
 var language = "english"; //Default, can be overwritten by chrome storage
 var lastWarning;
-const maxTimeWithoutWarning = 60000; //For the study a warning will be inserted every x time
+const maxTimeWithoutWarning = 100000; //For the study a warning will be inserted every x time
 var realCase = true;
+var currentlyWritingInjections = false;
 //Waits a given time in milliseconds
 function sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -45,7 +46,7 @@ function deleteCurrentSiteFromArray(infoArray) {
 async function main(){
     console.log("PD: Site Scan initiated!");
     chrome.storage.local.get('PDLastInjections', function(items){
-        console.log(items['PDLastInjections']);
+        /* console.log(items['PDLastInjections']); */
         lastWarning = items['PDLastInjections'][3];
       });
     writeStats("PDSiteFunctionalityInitiated");
@@ -120,7 +121,6 @@ function processStatus(writeStatus, VTTarray){
             if(writeStatus){
                 infoArray = deleteCurrentSiteFromArray(infoArray);
                 infoArray = [[currentSiteShort, "safe", siteReason, VTTarray]].concat(infoArray);
-                console.log(infoArray);
                 chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
             }
         });
@@ -135,7 +135,6 @@ function processStatus(writeStatus, VTTarray){
             if(writeStatus){
                 infoArray = deleteCurrentSiteFromArray(infoArray);
                 infoArray = [[currentSiteShort, "warning", siteReason, VTTarray]].concat(infoArray);
-                console.log(infoArray);
                 chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
             }
         });
@@ -147,7 +146,6 @@ function processStatus(writeStatus, VTTarray){
             if(enabled){
                 console.log("BG set red");
                 document.body.style.backgroundColor = 'red';
-                //TODO: Wieder neutral setzen danach!!!
             }
         });
         siteStatus = "warning";
@@ -338,12 +336,12 @@ async function inputPDIcon(pwElems) {
             if(safeSite){injectionArray[1] = Date.now();}
             else if(warningSite){injectionArray[3] = Date.now();}
             else{injectionArray[2] = Date.now();}
-            console.log(injectionArray);
+            /* console.log(injectionArray); */
             async function writeInjectionArray(injectionArray){
                 await sleep(1);//needed as otherwise an old instance is used :(
                 chrome.storage.local.set({'PDLastInjections': injectionArray}, function(items) {
                     chrome.storage.local.get({'PDLastInjections': injectionArray}, function(items) {
-                        console.log(items['PDLastInjections'])
+                        /* console.log(items['PDLastInjections']) */
                     });
                 });
             }
@@ -477,75 +475,94 @@ window.addEventListener("beforeunload", function(){
 });
 
 function writeStats(type) {
-    chrome.storage.local.get('PDStats', function(items){
-        var statsArray = items['PDStats'];
-        id = statsArray.length;
-        chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabID"}, function(response) {
-            var tabID = response.currentID;
-            statsArray.push([Date.now(), id, type, siteStatus, siteReason, tabID, currentSiteShort]);
-            chrome.storage.local.set({'PDStats': statsArray}, function() {});
-        });
+    chrome.storage.local.get('PDShareData', function(items) {
+        if(items['PDShareData'] == false) return;
+        else{
+            console.log("writingstats!");
+            chrome.storage.local.get('PDStats', function(items){
+                var statsArray = items['PDStats'];
+                id = statsArray.length;
+                chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabID"}, function(response) {
+                    var tabID = response.currentID;
+                    statsArray.push([Date.now(), id, type, siteStatus, siteReason, tabID, currentSiteShort]);
+                    chrome.storage.local.set({'PDStats': statsArray}, function() {});
+                });
 
+            });
+        }
     });
 }
 
 function checkUpload() {
-    chrome.storage.local.get('PDLastInjections', function(items){
+    chrome.storage.local.get('PDShareData', function(items) {
+        if(items['PDShareData'] == false){return;}
+        else{
+        chrome.storage.local.get('PDLastInjections', function(items){
+            function downloadStats() {
+                filename = "PDStats";
+                statsArray = []
+                statsArrayString = "";
 
-        function downloadStats() {
-            filename = "PDStats";
-            statsArray = []
-            statsArrayString = "";
-
-            var injectionArray = items['PDLastInjections'];
-            statsArrayString += "[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
-            for (entry of injectionArray){
-              d = new Date(entry);
-              d = d.toISOString();
-              statsArrayString += entry + ": " + d + "\n";
-            }
-
-            chrome.storage.local.get('PDStats', function(items){
-                statsArray = items['PDStats'];
-                var element = document.createElement('a');
-                statsArrayString += "\n\n---Begin list of injections ";
-                statsArrayString += "[timestamp, id, action performed, siteStatus, reason, pageURL]---\n";
-                for (entry of statsArray){
-                    statsArrayString += entry + "\n";
+                var injectionArray = items['PDLastInjections'];
+                statsArrayString += "[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
+                for (entry of injectionArray){
+                d = new Date(entry);
+                d = d.toISOString();
+                statsArrayString += entry + ": " + d + "\n";
                 }
-                statsArrayString += "---End of injections---\n"
-                  
-                //aditionally get currently known sites
-                chrome.storage.local.get('PDopenPageInfos', function(items){
-                    openPages = statsArray = items['PDopenPageInfos'];
-                    statsArrayString += "\n\nCurrently known pages:\n" + openPages.length + "\n";
-                    statsArrayString += "---Begin list of known pages ";
-                    statsArrayString += "[site, status, reason, (if applicable VTT results)]---\n"
-                    
-                    for (entry of openPages){
-                    statsArrayString += entry + "\n";
+
+                chrome.storage.local.get('PDStats', function(items){
+                    statsArray = items['PDStats'];
+                    var element = document.createElement('a');
+                    statsArrayString += "\n\n---Begin list of injections ";
+                    statsArrayString += "[timestamp, id, action performed, siteStatus, reason, pageURL]---\n";
+                    for (entry of statsArray){
+                        statsArrayString += entry + "\n";
                     }
-                    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
-                    chrome.storage.local.get('PDIDNumberOfClient', function(items){
-                        element.setAttribute('download', 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now()));
-                        element.style.display = 'none';
-                        document.body.appendChild(element);
-                
-                        element.click();
+                    statsArrayString += "---End of injections---\n"
+                    
+                    //aditionally get currently known sites
+                    chrome.storage.local.get('PDopenPageInfos', function(items){
+                        openPages = statsArray = items['PDopenPageInfos'];
+                        statsArrayString += "\n\nCurrently known pages:\n" + openPages.length + "\n";
+                        statsArrayString += "---Begin list of known pages ";
+                        statsArrayString += "[site, status, reason, (if applicable VTT results)]---\n"
                         
-                        document.body.removeChild(element);
+                        for (entry of openPages){
+                        statsArrayString += entry + "\n";
+                        }
+                        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+                        chrome.storage.local.get('PDIDNumberOfClient', function(items){
+                            element.setAttribute('download', 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now()));
+                            element.style.display = 'none';
+                            document.body.appendChild(element);
+                    
+                            element.click();
+                            
+                            document.body.removeChild(element);
+                        });
                     });
                 });
-            });
-          
-          }
-        var lastUpload = items['PDLastInjections'][4];
-        if(Date.now() > lastUpload + 180000){ //upload every hour, therefore every 3600.000 ms
-            downloadStats();
-            var pdLastInjectionsUpdate = items['PDLastInjections'];
-            pdLastInjectionsUpdate[4] = Date.now();
-            chrome.storage.local.set({'PDLastInjections': pdLastInjectionsUpdate}, function() {});
+            
+            }
+            var lastUpload = items['PDLastInjections'][4];
+            console.log("Time since last Upload: ", (Date.now() - lastUpload)/1000, "s");
+            if(Date.now() > lastUpload + 100000){ //upload every hour, therefore every 3600.000 ms
+                downloadStats();
+                waitAndupdateDownloadTime();
+            }
+        });
         }
+    });
+}
+
+async function waitAndupdateDownloadTime() {
+    await sleep(1000);
+    chrome.storage.local.get('PDLastInjections', function(items){
+    var pdLastInjectionsUpdate = items['PDLastInjections'];
+    pdLastInjectionsUpdate[4] = Date.now();
+    console.log(pdLastInjectionsUpdate);
+    chrome.storage.local.set({'PDLastInjections': pdLastInjectionsUpdate}, function() {});
     });
 }
 
