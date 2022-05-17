@@ -13,9 +13,10 @@ var safeSite = false;
 var VTTattempts = 0;
 var siteFromKnown = false;
 const maxKnownPages = 1000;
-
 var language = "english"; //Default, can be overwritten by chrome storage
-
+var lastWarning;
+const maxTimeWithoutWarning = 60000; //For the study a warning will be inserted every x time
+var realCase = true;
 //Waits a given time in milliseconds
 function sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -43,6 +44,11 @@ function deleteCurrentSiteFromArray(infoArray) {
 
 async function main(){
     console.log("PD: Site Scan initiated!");
+    chrome.storage.local.get('PDLastInjections', function(items){
+        console.log(items['PDLastInjections']);
+        lastWarning = items['PDLastInjections'][3];
+      });
+    writeStats("PDSiteFunctionalityInitiated");
     await chrome.storage.local.get('PDlanguage', function(items){
         language = items['PDlanguage'];
     });
@@ -53,8 +59,7 @@ async function main(){
         var infoArray = items['PDopenPageInfos'];
         for (site of infoArray){
             if(site[0] == currentSiteShort){
-                console.log("Page found in recently visited pages:");
-                console.log(infoArray);
+                console.log("Page found in recently visited pages.");
                 var VTTinfos = null;
                 siteStatus = site[1];
                 siteReason = site[2];
@@ -102,8 +107,7 @@ async function main(){
 
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
-        await inputPDIcon(pwElems);
-        writeStats("icon");
+        inputPDIcon(pwElems);
     }
     checkUpload()
 }
@@ -245,7 +249,7 @@ async function getVirusTotalInfo(backoff) {
         negativeVotes = 20;
         positiveVotes = 10; */
         if(totalVotes > 10) {
-            if(negativeVotes > 1){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
+            if(negativeVotes > 0){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
                 console.log("virus scan: warning");
                 warningSite = true;
                 safeSite = false;
@@ -264,6 +268,14 @@ async function getVirusTotalInfo(backoff) {
 
 //Platziert das PD Icon neben allen übergebenen Feldern
 async function inputPDIcon(pwElems) {
+    console.log("current time - last injection: ", (Date.now() - lastWarning)/1000, "s");
+    if(safeSite && Date.now() > lastWarning + maxTimeWithoutWarning) {//If last warning was shown too long ago, the user shoud be tested again. Only on safe sites!!
+        warningSite = true;
+        safeSite = false;
+        realCase = false;
+        siteReason = "activationTest";
+        chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
+    }
     for(let item of pwElems){
         //change text of password field
         //item.placeholder = texts.texts.placeholderPassword[language];
@@ -324,11 +336,21 @@ async function inputPDIcon(pwElems) {
         chrome.storage.local.get('PDLastInjections', function(items){
             var injectionArray = items['PDLastInjections'];
             if(safeSite){injectionArray[1] = Date.now();}
-            else if(safeSite){injectionArray[2] = Date.now();}
-            else{injectionArray[3] = Date.now();}
-            chrome.storage.local.set({'PDLastInjections': injectionArray}, function() {});
+            else if(warningSite){injectionArray[3] = Date.now();}
+            else{injectionArray[2] = Date.now();}
+            console.log(injectionArray);
+            async function writeInjectionArray(injectionArray){
+                await sleep(1);//needed as otherwise an old instance is used :(
+                chrome.storage.local.set({'PDLastInjections': injectionArray}, function(items) {
+                    chrome.storage.local.get({'PDLastInjections': injectionArray}, function(items) {
+                        console.log(items['PDLastInjections'])
+                    });
+                });
+            }
+            writeInjectionArray(injectionArray);
         });
     }
+    writeStats("icon");
 }
 
 function buildInfoContainer(iconAppended){
@@ -380,6 +402,12 @@ function appendTexts(rating, reason){
      + currentSiteShort + texts.texts.hoverBox.warningText[rating][language];
     justifyPhish.innerHTML = texts.texts.hoverBox.warningReason[rating][reason][language];
     recommendation.innerHTML = texts.texts.hoverBox.actionProposed[rating][language];
+    //manual ovverrides for attention Test
+    if(siteReason == "activationTest"){
+        siteInfoText.innerHTML = texts.texts.hoverBox.warningType.safe[language] + ": "
+        + currentSiteShort + texts.texts.hoverBox.warningText.safe[language];
+       recommendation.innerHTML = texts.texts.hoverBox.actionProposed.safe[language];
+    }
 }
 
 function appendLeaveButton(){
@@ -387,7 +415,7 @@ function appendLeaveButton(){
     container.removeChild(container.lastChild);
     leaveButton = createElementWithClass('button', 'leaveButton');
     leaveButton.setAttribute('onclick', 'window.location = "https://google.com"');
-    leaveButton.setAttribute('onclick', 'writeStats("leavecklick")');
+    leaveButton.setAttribute('onclick', 'writeStats("leaveClick")');
     leaveButton.innerHTML = texts.texts.hoverBox.leaveButton[language];
     container.appendChild(leaveButton);
 }
@@ -395,7 +423,8 @@ function appendLeaveButton(){
 //Erstellt alle Infos für den Fall einer Warnung
 function warning(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
-    siteInfoText.classList.add('siteInfotextWarning');
+    if(realCase){siteInfoText.classList.add('siteInfotextWarning');}
+    else{siteInfoText.classList.add('siteInfotextSafe');}
     appendTexts("warning", siteReason);
     appendLeaveButton();
 }
@@ -443,13 +472,20 @@ async function siteInSafe(site){
     return false;
 }
 
+window.addEventListener("beforeunload", function(){
+    writeStats("windowUnload");
+});
+
 function writeStats(type) {
-    //var statsArray = [];
     chrome.storage.local.get('PDStats', function(items){
         var statsArray = items['PDStats'];
-        id = statsArray.length + 1;
-        statsArray.push([Date.now(), id, type, siteStatus, siteReason, currentSiteShort]);
-        chrome.storage.local.set({'PDStats': statsArray}, function() {});
+        id = statsArray.length;
+        chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabID"}, function(response) {
+            var tabID = response.currentID;
+            statsArray.push([Date.now(), id, type, siteStatus, siteReason, tabID, currentSiteShort]);
+            chrome.storage.local.set({'PDStats': statsArray}, function() {});
+        });
+
     });
 }
 
@@ -459,50 +495,52 @@ function checkUpload() {
         function downloadStats() {
             filename = "PDStats";
             statsArray = []
+            statsArrayString = "";
+
+            var injectionArray = items['PDLastInjections'];
+            statsArrayString += "[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
+            for (entry of injectionArray){
+              d = new Date(entry);
+              d = d.toISOString();
+              statsArrayString += entry + ": " + d + "\n";
+            }
+
             chrome.storage.local.get('PDStats', function(items){
-              statsArray = items['PDStats'];
-              var element = document.createElement('a');
-              var statsArrayString = "[timestamp, id, action performed, siteStatus, reason, pageURL]\n";
-              for (entry of statsArray){
-                statsArrayString += entry + "\n";
-              }
-          
-              chrome.storage.local.get('PDLastInjections', function(items){
-                var injectionArray = items['PDLastInjections'];
-                statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
-                for (entry of injectionArray){
-                  d = new Date(entry);
-                  d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-                  statsArrayString += entry + ": " + d + "\n";
+                statsArray = items['PDStats'];
+                var element = document.createElement('a');
+                statsArrayString += "\n\n---Begin list of injections ";
+                statsArrayString += "[timestamp, id, action performed, siteStatus, reason, pageURL]---\n";
+                for (entry of statsArray){
+                    statsArrayString += entry + "\n";
                 }
-          
+                statsArrayString += "---End of injections---\n"
+                  
                 //aditionally get currently known sites
                 chrome.storage.local.get('PDopenPageInfos', function(items){
-                  openPages = statsArray = items['PDopenPageInfos'];
-                  statsArrayString += "\n\n\nCurrently known pages: " + openPages.length + "\n";
-                  statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
-                  
-                  for (entry of openPages){
+                    openPages = statsArray = items['PDopenPageInfos'];
+                    statsArrayString += "\n\nCurrently known pages:\n" + openPages.length + "\n";
+                    statsArrayString += "---Begin list of known pages ";
+                    statsArrayString += "[site, status, reason, (if applicable VTT results)]---\n"
+                    
+                    for (entry of openPages){
                     statsArrayString += entry + "\n";
-                  }
-                  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
-                  chrome.storage.local.get('PDIDNumberOfClient', function(items){
-                    element.setAttribute('download', 'PDStats_' + items['PDIDNumberOfClient']);
-                    element.style.display = 'none';
-                    document.body.appendChild(element);
-            
-                    element.click();
-                  
-                    document.body.removeChild(element);
-                  });
+                    }
+                    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+                    chrome.storage.local.get('PDIDNumberOfClient', function(items){
+                        element.setAttribute('download', 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now()));
+                        element.style.display = 'none';
+                        document.body.appendChild(element);
+                
+                        element.click();
+                        
+                        document.body.removeChild(element);
+                    });
                 });
-              });
             });
           
           }
         var lastUpload = items['PDLastInjections'][4];
-        console.log(Date.now(), lastUpload, " Zeit seit letzem Download: " + (Date.now() - lastUpload)/1000 + "s");
-        if(Date.now() > lastUpload + 3600000){ //upload every hour, therefore every 3600.000 ms
+        if(Date.now() > lastUpload + 180000){ //upload every hour, therefore every 3600.000 ms
             downloadStats();
             var pdLastInjectionsUpdate = items['PDLastInjections'];
             pdLastInjectionsUpdate[4] = Date.now();
@@ -562,6 +600,10 @@ var texts = {
                     "VTTScan": {
                         "english": "Reason: We ran a virus scan of this page!",
                         "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
+                    },
+                    "activationTest": {
+                        "english":"We only tested your attention (1 time per 3 days). Good job!",
+                        "german": "Wir haben nur Ihre Aufmerksamkeit getestet (1 mal pro 3 Tagen). Gute Arbeit!"
                     }
                 },
                 "safe": {
