@@ -96,7 +96,7 @@ async function init(){
   var infopage= iconsRight.appendChild(createElementWithClass('a', 'infoSection'));
   var infoImg = infopage.appendChild(createElementWithClass('img', 'infoIMG'));
   infoImg.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/info.png');
-  infopage.setAttribute('href', 'infopage.html');
+  infopage.setAttribute('href', 'https://phishingdetector.github.io/PhishingDetector/');
   infopage.setAttribute('target', '_blank');
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
