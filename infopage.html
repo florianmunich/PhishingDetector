@@ -1,153 +1,159 @@
 <html>
-    <head>
-        <title>Phishing Detector Info Page</title>
-        <link
-            rel="icon"
-            type="image/x-icon"
-            href="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_blue.svg" />
-        <link rel="stylesheet" href="infopage.css" />
-    </head>
+  <head>
+    <title>Phishing Detector Info Page</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_blue.svg"
+    />
+    <link rel="stylesheet" href="infopage.css" />
+  </head>
 
-    <body>
-        <div class="popupContainer">
-            <div class="identifier">
-                <div class="logo">
-                    <img
-                        class="logoSVG"
-                        src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_blue.svg" />
-                </div>
-                <div class="name">Phishing Detector - Information Page</div>
-            </div>
-
-            <div class="separatorLine"></div>
-            <div class="infoblock">
-                <div class="questionImage">
-                    <div class="imageQ">
-                        <img
-                            class="questionImage"
-                            src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/additionalAssets/Phishing.svg" />
-                    </div>
-                </div>
-                <div>
-                    <p class="Headline">What is PhishingDetector?</p>
-                    <p>
-                        Phishing Detector is a project of the LMU Munich in
-                        cooperation with the Bundeswehr University, which was
-                        developed in the context of a master thesis. The aim is
-                        to test whether the spatial proximity of warnings has an
-                        influence on user behavior, and whether there are
-                        properties that improve or worsen this behavior. The
-                        master thesis is written by Florian Hartl, the
-                        supervisors are M.Sc. Felix Dietz and Dr. Pascal
-                        Knierim. The thesis will be titled "Development and
-                        Evaluation of a Browser Plugin To Prevent Social
-                        Engineering Attacks".
-                    </p>
-                </div>
-            </div>
-            <div class="separatorLine"></div>
-            <div class="infos">
-                <div class="questionImage">
-                    <div class="imageQ">
-                        <img
-                            class="questionImage"
-                            src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/additionalAssets/Puzzle-pana.svg" />
-                    </div>
-                </div>
-                <div>
-                    <div class="Headline">How does it work?</div>
-                    <div class="infoText">
-                        PhishingDetector scans the domain of every page you
-                        visit. Then it matches whether the domain is in a white-
-                        or blacklist of websites that we obtain from Mendeley.
-                        The origin of the files is a
-                        <a
-                            href="https://data.mendeley.com/datasets/n96ncsr5g4/1"
-                            target="_blank"
-                            >Mendeley Data Set</a
-                        >. For websites that are not in these lists, we request
-                        an analysis from
-                        <a href="https://www.virustotal.com/" target="_blank"
-                            >Virustotal.com</a
-                        >
-                        for the domain. This site scans websites with about 80
-                        virus scanners and returns the result. If more than one
-                        scan finds the website to be malicious, we create a
-                        warning. You can then decide for yourself in the pop-up
-                        window whether you trust the scan or classify the site
-                        as safe.
-                    </div>
-                </div>
-            </div>
-            <div class="separatorLine"></div>
-            <div class="faq">
-                <div class="questionImage">
-                    <div class="imageQ">
-                        <img
-                            class="questionImage"
-                            src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/additionalAssets/Questions-pana.svg" />
-                    </div>
-                </div>
-                <div>
-                    <p class="Headline">Frequently Asked Questions</p>
-                    <p class="noMargin infotext">
-                        Click on the questions to expand the frame and see the
-                        answer
-                    </p>
-                    <details class="question">
-                        <summary class="q">
-                            What data is shared with the developers?
-                        </summary>
-                        <p class="a">
-                            As part of the study, we store data that the tool
-                            creates. For example, injections of the icon, scans
-                            of pages and behavior when displaying the injected
-                            icon. All data is transferred anonymously. In
-                            particular, web pages are also shortened to their
-                            domains, i.e. they are not transmitted in full (for
-                            example, for https://www.facebook.com/martin.fischer
-                            only www.facebook.com is stored). Should the
-                            functionality be disabled, no further data will be
-                            collected or shared. Under no circumstances will
-                            information be published in the thesis that could
-                            indicate the identity of users.
-                        </p>
-                    </details>
-                    <details class="question">
-                        <summary class="q">
-                            Do I have to leave all options enabled for the
-                            study?
-                        </summary>
-                        <p class="a">
-                            For the study, the general functionality and the
-                            upload of data must be enabled. Background coloring
-                            can be enabled or disabled as desired.
-                        </p>
-                    </details>
-                    <details class="question">
-                        <summary class="q">
-                            Why does the yellow icon appear some times and turns
-                            green after some time?
-                        </summary>
-                        <p class="a">
-                            If a web page is not known by your browser's version
-                            of PhishingDetector, a virus scan is requested. If
-                            the page was never scanned before, we request a scan
-                            by Virustotal which initiates a scan by multiple
-                            detectors. After this scan the result is returned to
-                            the plugin. Until all this is processed, the icon's
-                            color will be yellow. You can retrieve information
-                            about the current status that will be updated once
-                            the scan results are ready.
-                        </p>
-                    </details>
-                </div>
-            </div>
-            <button class="writeEmail">
-                <a href="mailto:florian.hartl@campus.lmu.de"
-                    >Send us an Email</a
-                >
-            </button>
+  <body>
+    <div class="popupContainer">
+      <div class="identifier">
+        <div class="logo">
+          <img
+            class="logoSVG"
+            src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_blue.svg"
+          />
         </div>
-    </body>
+        <div class="name">Phishing Detector - Information Page</div>
+      </div>
+
+      <div class="separatorLine"></div>
+      <div class="infoblock">
+        <div class="questionImage">
+          <div class="imageQ">
+            <img
+              class="questionImage"
+              src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/additionalAssets/Phishing.svg"
+            />
+          </div>
+        </div>
+        <div>
+          <p class="Headline">What is PhishingDetector?</p>
+          <p>
+            Phishing Detector is a project of the LMU Munich in cooperation with
+            the Bundeswehr University, which was developed in the context of a
+            master thesis. The aim is to test whether the spatial proximity of
+            warnings has an influence on user behavior, and whether there are
+            properties that improve or worsen this behavior. The master thesis
+            is written by Florian Hartl, the supervisors are M.Sc. Felix Dietz
+            and Dr. Pascal Knierim. The thesis will be titled "Development and
+            Evaluation of a Browser Plugin To Prevent Social Engineering
+            Attacks".
+          </p>
+        </div>
+      </div>
+      <div class="separatorLine"></div>
+      <div class="infos">
+        <div class="questionImage">
+          <div class="imageQ">
+            <img
+              class="questionImage"
+              src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/additionalAssets/Puzzle-pana.svg"
+            />
+          </div>
+        </div>
+        <div>
+          <div class="Headline">How does it work?</div>
+          <div class="infoText">
+            PhishingDetector scans the domain of every page you visit. Then it
+            matches whether the domain is in a white- or blacklist of websites
+            that we obtain from Mendeley. The origin of the files is a
+            <a
+              href="https://data.mendeley.com/datasets/n96ncsr5g4/1"
+              target="_blank"
+              >Mendeley Data Set</a
+            >. For websites that are not in these lists, we request an analysis
+            from
+            <a href="https://www.virustotal.com/" target="_blank"
+              >Virustotal.com</a
+            >
+            for the domain. This site scans websites with about 80 virus
+            scanners and returns the result. If more than one scan finds the
+            website to be malicious, we create a warning. You can then decide
+            for yourself in the pop-up window whether you trust the scan or
+            classify the site as safe.
+          </div>
+        </div>
+      </div>
+      <div class="separatorLine"></div>
+      <div class="faq">
+        <div class="questionImage">
+          <div class="imageQ">
+            <img
+              class="questionImage"
+              src="https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/additionalAssets/Questions-pana.svg"
+            />
+          </div>
+        </div>
+        <div>
+          <p class="Headline">Frequently Asked Questions</p>
+          <p class="noMargin infotext">
+            Click on the questions to expand the frame and see the answer
+          </p>
+          <details class="question">
+            <summary class="q">
+              What data is shared with the developers?
+            </summary>
+            <p class="a">
+              As part of the study, we store data that the tool creates. For
+              example, injections of the icon, scans of pages and behavior when
+              displaying the injected icon. All data is transferred anonymously.
+              In particular, web pages are also shortened to their domains, i.e.
+              they are not transmitted in full (for example, for
+              https://www.facebook.com/martin.fischer only www.facebook.com is
+              stored). Should the functionality be disabled, no further data
+              will be collected or shared. Under no circumstances will
+              information be published in the thesis that could indicate the
+              identity of users.
+            </p>
+          </details>
+          <details class="question">
+            <summary class="q">
+              Do I have to leave all options enabled for the study?
+            </summary>
+            <p class="a">
+              For the study, the general functionality and the upload of data
+              must be enabled. Background coloring can be enabled or disabled as
+              desired.
+            </p>
+          </details>
+          <details class="question">
+            <summary class="q">
+              Why does the yellow icon appear some times and turns green after
+              some time?
+            </summary>
+            <p class="a">
+              If a web page is not known by your browser's version of
+              PhishingDetector, a virus scan is requested. If the page was never
+              scanned before, we request a scan by Virustotal which initiates a
+              scan by multiple detectors. After this scan the result is returned
+              to the plugin. Until all this is processed, the icon's color will
+              be yellow. You can retrieve information about the current status
+              that will be updated once the scan results are ready.
+            </p>
+          </details>
+          <details class="question">
+            <summary class="q">
+              Why does the scan not work on some pages?
+            </summary>
+            <p class="a">
+              On all public accessible pages the scan and the display of the
+              icon should work without any problems. On system pages and files
+              that are open locally, no analysis is performed and the icon
+              remains yellow. If the volume of requests is too high, it may be
+              that temporarily no new analyses can be retrieved. This error will
+              fix itself after 24 hours at the latest.
+            </p>
+          </details>
+        </div>
+      </div>
+      <button class="writeEmail">
+        <a href="mailto:florian.hartl@campus.lmu.de">Send us an Email</a>
+      </button>
+    </div>
+  </body>
 </html>
