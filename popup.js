@@ -1,5 +1,6 @@
-var language = "english"; //Default, can be overwritten by chrome storage
 var safeSiteURL = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
+//Initialize variables
+var language = "english"; //Default, can be overwritten by chrome storage
 var phishingSites;
 var safeSites;
 var siteStatus;
@@ -62,7 +63,7 @@ async function handleSettingClick(event) {
           writeStats('PDsetBGColor set to ' + currentSettingStatus);
         }
         else if(setting == "PDShareData") {
-          writeStats('PDShareData set to ' + currentSettingStatus);
+          writeStats('PDShareData set to false');//If set to true, this will automatically be blocked
           handleStatsSharing(currentSettingStatus);
         }
       }
@@ -76,7 +77,11 @@ async function handleSettingClick(event) {
 
 async function handleStatsSharing(currentSettingStatus) {
   await sleep(50);
-  chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {});
+  chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {
+    if(currentSettingStatus){
+        writeStats('PDShareData set to true');//If set to false, this will automatically be blocked if done earlier than now
+    }
+  });
 }
 
 async function init(){
@@ -288,6 +293,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
 }
 
 function markAsSafeSite() {
+  writeStats("MarkSafe");
   document.getElementById('clickSafeButton').remove();
   var questionContainer = createElementWithClass('div', 'questionContainer');
   questionContainer.setAttribute('id', 'questionContainer');
@@ -302,6 +308,7 @@ function markAsSafeSite() {
   questionContainer.appendChild(sureYes);
   
   function doubleYes(){
+    writeStats("MarkSafeYes");
     console.log("Marked as safe");
     document.getElementById('questionContainer').remove();
     chrome.storage.local.get("PDopenPageInfos", function(items){
@@ -326,6 +333,7 @@ function markAsSafeSite() {
   });
   }
   function doubleNo(){
+    writeStats("MarkSafeNo");
     document.getElementById('questionContainer').remove();
   }
   sureYes.addEventListener('click', doubleYes);

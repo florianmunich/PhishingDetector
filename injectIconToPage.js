@@ -1,4 +1,5 @@
 let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
+//Initialize variables
 var allKnownSites;
 var warningSites;
 var safeSites;
@@ -7,7 +8,6 @@ var currentSiteShort = window.location.toString().split('/')[2];
 var id;
 var siteStatus;
 var siteReason = "noData";
-//check site and write current information in Chrome storage
 var warningSite = false;
 var safeSite = false;
 var VTTattempts = 0;
@@ -16,13 +16,16 @@ const maxKnownPages = 1000;
 var language = "english"; //Default, can be overwritten by chrome storage
 var lastWarning;
 const maxTimeWithoutWarning = 100000; //For the study a warning will be inserted every x time
-var realCase = true;
+var realCase = true; //For testing the user's attention this will be set to false once a while
 var currentlyWritingInjections = false;
-//Waits a given time in milliseconds
+
+//Helper Function
+//waits a given time in milliseconds
 function sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
+//Helper Function
 //creates an HTML object and adds a class
 function createElementWithClass(type, className) {
     const element = document.createElement(type);
@@ -43,10 +46,11 @@ function deleteCurrentSiteFromArray(infoArray) {
     return infoArray;
 }
 
+//handles all functionalities of the plugin on the site
+//only is called if the general functionality is enabled
 async function main(){
     console.log("PD: Site Scan initiated!");
     chrome.storage.local.get('PDLastInjections', function(items){
-        /* console.log(items['PDLastInjections']); */
         lastWarning = items['PDLastInjections'][3];
       });
     writeStats("PDSiteFunctionalityInitiated");
@@ -96,16 +100,12 @@ async function main(){
         });
         siteStatus = "unknown";
         siteReason = "noScan";
-        //TODO: Await wartet nicht, da kein Promise da ist
         
         await getVirusTotalInfo(0);
         await sleep(1000);
-
-        //macht er selber
-        //processStatus(false,[]);
     }
 
-
+    //for every password fiel insert the icon
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
         inputPDIcon(pwElems);
@@ -146,6 +146,7 @@ function processStatus(writeStatus, VTTarray){
             if(enabled){
                 console.log("BG set red");
                 document.body.style.backgroundColor = 'red';
+                writeStats("BGColor set red");
             }
         });
         siteStatus = "warning";
@@ -478,7 +479,6 @@ function writeStats(type) {
     chrome.storage.local.get('PDShareData', function(items) {
         if(items['PDShareData'] == false) return;
         else{
-            console.log("writingstats!");
             chrome.storage.local.get('PDStats', function(items){
                 var statsArray = items['PDStats'];
                 id = statsArray.length;
@@ -561,7 +561,6 @@ async function waitAndupdateDownloadTime() {
     chrome.storage.local.get('PDLastInjections', function(items){
     var pdLastInjectionsUpdate = items['PDLastInjections'];
     pdLastInjectionsUpdate[4] = Date.now();
-    console.log(pdLastInjectionsUpdate);
     chrome.storage.local.set({'PDLastInjections': pdLastInjectionsUpdate}, function() {});
     });
 }
