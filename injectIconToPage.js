@@ -479,16 +479,7 @@ function writeStats(type) {
     chrome.storage.local.get('PDShareData', function(items) {
         if(items['PDShareData'] == false) return;
         else{
-            chrome.storage.local.get('PDStats', function(items){
-                var statsArray = items['PDStats'];
-                id = statsArray.length;
-                chrome.runtime.sendMessage({VTTtoCheckURL: "getCurrentTabID"}, function(response) {
-                    var tabID = response.currentID;
-                    statsArray.push([Date.now(), id, type, siteStatus, siteReason, tabID, currentSiteShort]);
-                    chrome.storage.local.set({'PDStats': statsArray}, function() {});
-                });
-
-            });
+            chrome.runtime.sendMessage({VTTtoCheckURL: "writeStats", statsToWrite: [Date.now(), type, siteStatus, siteReason, currentSiteShort]}, function(response){});
         }
     });
 }

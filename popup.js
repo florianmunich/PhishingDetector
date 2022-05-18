@@ -399,17 +399,11 @@ function downloadStats() {
 
 function writeStats(type) {
   chrome.storage.local.get('PDShareData', function(items) {
-      if(items['PDShareData'] == false) return;
-      else{
-          chrome.storage.local.get('PDStats', function(items){
-              var statsArray = items['PDStats'];
-              id = statsArray.length;
-              statsArray.push([Date.now(), id, type, siteStatus, siteReason, 99999, currentSiteShort]);
-              chrome.storage.local.set({'PDStats': statsArray}, function() {});
-
-          });
-      }
-  });
+    if(items['PDShareData'] == false) return;
+    else{
+      chrome.runtime.sendMessage({VTTtoCheckURL: "writeStats", statsToWrite: [Date.now(), type, siteStatus, siteReason, currentSiteShort]}, function(response){});
+    }
+});
 }
 
 

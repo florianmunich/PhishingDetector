@@ -2,6 +2,7 @@ var currentWebsite = '';
 var VTTApiKey = '';//VirusTotal Apikey, will only be in the final Plugin
 const installationTime = Date.now();
 var PDID = Math.floor(Math.random() * Math.floor(Math.random() * Date.now()));//Generate unique IDs for each participant
+var statsArray = [];
 
 chrome.runtime.onInstalled.addListener(() => {
   var d = new Date(installationTime);
@@ -30,6 +31,9 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
 chrome.storage.local.get('PDStats', function(items){
   if(items['PDStats'] == undefined){
     chrome.storage.local.set({'PDStats': []}, function() {});
+  }
+  else{
+    statsArray = items['PDStats'];
   }
 });
 //For debugging set PDStats to []
@@ -131,6 +135,19 @@ chrome.runtime.onMessage.addListener(
       sendResponse({currentID: sender.tab.id})
     }
 
+    //write Stats
+    else if(request.VTTtoCheckURL === "writeStats"){
+      console.log(request.statsToWrite);
+      id=9999;
+      try{
+        id = sender.tab.id;
+      }
+      catch(err) {id = 9999;}
+      statsArray.push([request.statsToWrite[0], statsArray.length, request.statsToWrite[1], request.statsToWrite[2], request.statsToWrite[3], id, request.statsToWrite[4]]);
+      console.log(statsArray);
+      chrome.storage.local.set({'PDStats': statsArray}, function() {});
+    }
+
     return true;
   }
 );
@@ -140,18 +157,15 @@ async function writeStats(type, tabID) {
   chrome.storage.local.get('PDShareData', function(items) {
     if(items['PDShareData'] == false){return;}
     else{
-      chrome.storage.local.get('PDStats', function(items){
-        var statsArray = items['PDStats'];
-        id = statsArray.length;
-        chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-          statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabs[0].url.toString().split('/')[2]]);
-          if(statsArray.length < 2){
-            console.log("Error writing stats!"); 
-            console.log(id, type, tabs[0].url);
-            return;
-          }
-          chrome.storage.local.set({'PDStats': statsArray}, function() {});
-        });
+      id = statsArray.length;
+      chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabs[0].url.toString().split('/')[2]]);
+        if(statsArray.length < 2){
+          console.log("Error writing stats!"); 
+          console.log(id, type, tabs[0].url);
+          return;
+        }
+        chrome.storage.local.set({'PDStats': statsArray}, function() {});
       });
     }
   });
