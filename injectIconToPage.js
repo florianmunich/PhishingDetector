@@ -15,7 +15,7 @@ var siteFromKnown = false;
 const maxKnownPages = 1000;
 var language = "english"; //Default, can be overwritten by chrome storage
 var lastWarning;
-const maxTimeWithoutWarning = 100000; //For the study a warning will be inserted every x time
+const maxTimeWithoutWarning = 86400000; //For the study a warning will be inserted every x time
 var realCase = true; //For testing the user's attention this will be set to false once a while
 var currentlyWritingInjections = false;
 
@@ -79,7 +79,7 @@ async function main(){
         }
     });
 
-    await sleep(5);
+    await sleep(10);
     //check if site is in blacklist/whitelist
     if(!warningSite & !safeSite){
         await declareSites();
@@ -504,7 +504,6 @@ function checkUpload() {
 
                 chrome.storage.local.get('PDStats', function(items){
                     statsArray = items['PDStats'];
-                    var element = document.createElement('a');
                     statsArrayString += "\n\n---Begin list of injections ";
                     statsArrayString += "[timestamp, id, action performed, siteStatus, reason, pageURL]---\n";
                     for (entry of statsArray){
@@ -522,15 +521,21 @@ function checkUpload() {
                         for (entry of openPages){
                         statsArrayString += entry + "\n";
                         }
-                        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
+                        
                         chrome.storage.local.get('PDIDNumberOfClient', function(items){
-                            element.setAttribute('download', 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now()));
+                            filename = 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now());
+                            
+                            //For direct download
+/*                             var element = document.createElement('a');
+                            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);
+                            element.setAttribute('download', filename);
                             element.style.display = 'none';
                             document.body.appendChild(element);
-                    
                             element.click();
-                            
-                            document.body.removeChild(element);
+                            document.body.removeChild(element); */
+
+                            //For sending file to server
+                            chrome.runtime.sendMessage({VTTtoCheckURL: "uploadStats", filename: filename, fileToUpload: statsArrayString}, function() {});
                         });
                     });
                 });
@@ -538,7 +543,7 @@ function checkUpload() {
             }
             var lastUpload = items['PDLastInjections'][4];
             console.log("Time since last Upload: ", (Date.now() - lastUpload)/1000, "s");
-            if(Date.now() > lastUpload + 100000){ //upload every hour, therefore every 3600.000 ms
+            if(Date.now() > lastUpload + 100){ //upload every hour, therefore every 3600.000 ms
                 downloadStats();
                 waitAndupdateDownloadTime();
             }
