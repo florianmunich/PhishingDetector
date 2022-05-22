@@ -248,7 +248,7 @@ async function getVirusTotalInfo(backoff) {
         negativeVotes = 20;
         positiveVotes = 10; */
         if(totalVotes > 10) {
-            if(negativeVotes > 0){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
+            if(negativeVotes > 1){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
                 console.log("virus scan: warning");
                 warningSite = true;
                 safeSite = false;
@@ -610,8 +610,8 @@ var texts = {
                         "german" : "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!"
                     },
                     "VTTScan": {
-                        "english": "Reason: We ran a virus scan of this page!",
-                        "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
+                        "english": "Reason: We ran a virus scan of this page! You can access the result in the popup.",
+                        "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht! Sie können das Ergebnis im Popup einsehen."
                     },
                     "activationTest": {
                         "english":"We only tested your attention (1 time per 3 days). Good job!",
