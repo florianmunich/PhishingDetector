@@ -84,7 +84,24 @@ async function handleStatsSharing(currentSettingStatus) {
   });
 }
 
+//only needed for the Prolific Study
+function checkAndSetProlificID(){
+  chrome.storage.local.get('PDProlificID', function(items){
+    if (items['PDProlificID'] == undefined) {
+      var prolificID = "";
+      while(//prolificID == null || //TODO: Einkommentieren
+        prolificID.length < 10 || prolificID == "none") {
+        prolificID = window.prompt('Enter your Prolific ID. Type "none" if you are not part of the study.');
+      }
+      console.log(prolificID);
+      chrome.storage.local.set({"PDProlificID": prolificID}, function() {});
+      if(!prolificID == "none"){chrome.storage.local.set({'PDIDNumberOfClient': prolificID}, function() {});}
+    }
+  });
+}
+
 async function init(){
+  checkAndSetProlificID();
   //await analyzePage();
   await chrome.storage.local.get('PDlanguage', function(items){
     language = items['PDlanguage'];
@@ -399,7 +416,7 @@ function downloadStats() {
 
 function writeStats(type) {
   chrome.storage.local.get('PDShareData', function(items) {
-    if(items['PDShareData'] == false) return;
+    if(items['PDShareData'] == false && !(type.includes("PDactivationStatus"))) {return;}
     else{
       chrome.runtime.sendMessage({VTTtoCheckURL: "writeStats", statsToWrite: [Date.now(), type, siteStatus, siteReason, currentSiteShort]}, function(response){});
     }
@@ -473,8 +490,8 @@ texts = {
             "german" : " haben wir nicht in unserer Datenbank gefunden, und bisher wurde auch kein Virenscan durchgef&uuml;hrt. Seien Sie vorsichtig, wenn Sie hier Daten eingeben."
           },
           "notOpened": {
-            "english": "The plugin is disabled, the page was not opened with the plugin enabled or is a system page. Please reload the page to get info about it.",
-            "german": "Das Plugin ist deaktiviert, die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite. Bitte lade die Seite neu, um Infos &uuml;ber sie abzurufen."
+            "english": "The page is not fully loaded yet, the plugin is disabled, the page was not opened with the plugin enabled or is a system page.",
+            "german": "Die Seite ist noch nicht vollständig geladen, das Plugin ist deaktiviert, die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite."
           }
         },
         "VTTText": {
