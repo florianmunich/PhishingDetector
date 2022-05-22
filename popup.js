@@ -87,15 +87,19 @@ async function handleStatsSharing(currentSettingStatus) {
 //only needed for the Prolific Study
 function checkAndSetProlificID(){
   chrome.storage.local.get('PDProlificID', function(items){
-    if (items['PDProlificID'] == undefined) {
+    console.log(items["PDProlificID"]);
+    chrome.storage.local.get('PDIDNumberOfClient', function(items){
+      console.log(items["PDIDNumberOfClient"]);
+    });
+    if (items['PDProlificID'] == undefined || items['PDProlificID'] == "") {
       var prolificID = "";
-      while(//prolificID == null || //TODO: Einkommentieren
-        prolificID.length < 10 || prolificID == "none") {
-        prolificID = window.prompt('Enter your Prolific ID. Type "none" if you are not part of the study.');
+      while(prolificID == "null" ||
+        prolificID.length < 16) {//should be length 24
+        prolificID = window.prompt('Enter your Prolific ID. Type "none" if you are not part of the study. \nIMPORTANT: Enter the ID correctly and without spaces!');
       }
       console.log(prolificID);
       chrome.storage.local.set({"PDProlificID": prolificID}, function() {});
-      if(!prolificID == "none"){chrome.storage.local.set({'PDIDNumberOfClient': prolificID}, function() {});}
+      if(!(prolificID == "none")){chrome.storage.local.set({'PDIDNumberOfClient': prolificID}, function() {});}
     }
   });
 }
@@ -118,7 +122,18 @@ async function init(){
   var newItemIMG = logo.appendChild(createElementWithClass('img', 'logoSVG'));
   newItemIMG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon.svg');
   var nameExtension = identifier.appendChild(createElementWithClass('div', 'name'));
-  nameExtension.innerHTML = 'Phishing Detector';
+  nameExtension.innerHTML = 'PhishingDetector';
+  var prolificID = nameExtension.appendChild(createElementWithClass('div', 'prolificID'));
+  chrome.storage.local.get('PDProlificID', function(items){
+    prolificID.innerHTML = "ProlificID: " + items['PDProlificID'];
+    var resetProlific = prolificID.appendChild(createElementWithClass('button', 'resetProlificID'));
+    resetProlific.innerHTML = 'Reset ID';
+    resetProlific.addEventListener('click', resetProlificFun);
+    function resetProlificFun(){
+      chrome.storage.local.set({"PDProlificID": ""}, function() {});
+      document.location.reload();
+    }
+  });
   iconsRight = identifier.appendChild(createElementWithClass('div', 'iconsRight'));
   var infopage= iconsRight.appendChild(createElementWithClass('a', 'infoSection'));
   var infoImg = infopage.appendChild(createElementWithClass('img', 'infoIMG'));
