@@ -93,8 +93,7 @@ function checkAndSetProlificID(){
     });
     if (items['PDProlificID'] == undefined || items['PDProlificID'] == "") {
       var prolificID = "";
-      while(prolificID == "null" ||
-        prolificID.length < 16) {//should be length 24
+      while((prolificID == null || prolificID.length < 16) && prolificID != "none") {//should be length 24
         prolificID = window.prompt('Enter your Prolific ID. Type "none" if you are not part of the study. \nIMPORTANT: Enter the ID correctly and without spaces!');
       }
       console.log(prolificID);
