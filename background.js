@@ -53,14 +53,14 @@ chrome.runtime.onMessage.addListener(
     if(request.VTTtoCheckURL === "safeSite"){
       //console.log("safe BG");
       chrome.action.setIcon({path: "/images/colors/logo_green_16.png", tabId: sender.tab.id});
-      writeStats('Popup icon set to green (safeSite)', sender.tab.id);
+      writeStats('Popup icon set to green (safeSite)', sender.tab.id, sender.tab.url);
     }
 
     //a unknown site was detected, the Plugin's Icon in the toolbar should be set to yellow
     else if(request.VTTtoCheckURL === "unknownSite"){
       //console.log("unknown BG");
       chrome.action.setIcon({path: "/images/colors/logo_yellow_16.png", tabId: sender.tab.id});
-      writeStats('Popup icon set to yellow (unknownSite)', sender.tab.id);
+      writeStats('Popup icon set to yellow (unknownSite)', sender.tab.id, sender.tab.url);
     }
 
     //a warning site was detected, the Plugin's Icon in the toolbar should be set to red and the badge will be appended by exclamation marks
@@ -69,7 +69,7 @@ chrome.runtime.onMessage.addListener(
       chrome.action.setIcon({path: "/images/colors/logo_red_16.png", tabId: sender.tab.id});
       chrome.action.setBadgeText({text: '!!', tabId: sender.tab.id});
       chrome.action.setBadgeBackgroundColor({color: [255,0,0,255], tabId: sender.tab.id});
-      writeStats('Popup icon set to red (warningSite)', sender.tab.id);
+      writeStats('Popup icon set to red (warningSite)', sender.tab.id), sender.tab.url;
     }
 
     //A Virustotal result should be grabbed
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener(
           .then(response => response.json())
           .then(response => sendResponse({VTTresult: response}))
           .catch(err => {
-            writeStats('VTTError', sender.tab.id);
+            writeStats('VTTError', sender.tab.id, sender.tab.url);
             console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
       });
     }
@@ -115,7 +115,7 @@ chrome.runtime.onMessage.addListener(
           .then(response => response.json())
           .then(response => sendResponse({VTTresult: response}))
           .catch(err => {
-            writeStats('VTTError', sender.tab.id);
+            writeStats('VTTError', sender.tab.id, sender.tab.url);
             console.log(err, 'VTT did not respond with valid data. Probably never scanned before or quota done!');
       });
     }
@@ -144,8 +144,24 @@ chrome.runtime.onMessage.addListener(
       }
       catch(err) {id = 9999;}
       statsArray.push([request.statsToWrite[0], statsArray.length, request.statsToWrite[1], request.statsToWrite[2], request.statsToWrite[3], id, request.statsToWrite[4]]);
-      console.log(statsArray);
       chrome.storage.local.set({'PDStats': statsArray}, function() {});
+    }
+
+    else if(request.VTTtoCheckURL === "uploadStats"){
+      filename = request.filename;
+      fileToUpload = request.fileToUpload;
+
+      console.log("Uploading stats from BG", fileToUpload);
+      
+      //fetch('https://study2.usec.code.unibw-muenchen.de/', {
+        fetch('http://localhost:8000/uploadFile', {
+        method: 'POST',
+        headers: {filename: filename},
+        body: fileToUpload
+      })
+      .then(response => console.log(response))
+      .catch(err => console.log(err));
+      
     }
 
     return true;
@@ -153,18 +169,13 @@ chrome.runtime.onMessage.addListener(
 );
 
 //writes Study data into the log file if enabled
-async function writeStats(type, tabID) {
+async function writeStats(type, tabID, tabURL) {
   chrome.storage.local.get('PDShareData', function(items) {
     if(items['PDShareData'] == false){return;}
     else{
       id = statsArray.length;
       chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabs[0].url.toString().split('/')[2]]);
-        if(statsArray.length < 2){
-          console.log("Error writing stats!"); 
-          console.log(id, type, tabs[0].url);
-          return;
-        }
+        statsArray.push([Date.now(), id, type, 'none', 'none',tabID, tabURL.split('/')[2]]);
         chrome.storage.local.set({'PDStats': statsArray}, function() {});
       });
     }
