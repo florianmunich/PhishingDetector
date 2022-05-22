@@ -130,6 +130,7 @@ async function init(){
     resetProlific.addEventListener('click', resetProlificFun);
     function resetProlificFun(){
       chrome.storage.local.set({"PDProlificID": ""}, function() {});
+      window.alert(texts.texts.prolific.reset[language]);
       document.location.reload();
     }
   });
@@ -596,6 +597,12 @@ texts = {
       "infoText": {
         "english": "English: PhishingDetector uses blacklists and whitelists for known sites. If a website is not on these lists, a virus scan is retrieved from virustotal.com.",
         "german": "PhishingDetector benutzt Black- sowie Whitelists f&uuml;r bekannte Seiten. Ist eine Webseite nicht auf diesen Listen vorhanden, wird ein Virenscan von virustotal.com abgerufen."
+      }
+    },
+    "prolific": {
+      "reset": {
+        "english": 'WARNING: Entering "none" in the next step will only reset the displayed version of your ID. If you do not wish to share data, please disable the option, deleting the ID will not do this.',
+        "german":  'ACHTUNG: Wenn Sie im naechsten Schritt "none" eingeben, wird nur die angezeigte Version Ihrer ID zurueckgesetzt. Wenn Sie keine Daten teilen moechten, deaktivieren Sie bitte die Option, das Loeschen der ID wird dies nicht bewirken.'
       }
     }
   }
