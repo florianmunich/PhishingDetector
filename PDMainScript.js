@@ -490,7 +490,7 @@ window.addEventListener("beforeunload", function(){
     writeStats("windowUnload");
 });
 
-//Write statistics
+//Send a request to the background script with a stats entry
 function writeStats(type) {
     chrome.storage.local.get('PDShareData', function(items) {
         if(items['PDShareData'] == false) return;

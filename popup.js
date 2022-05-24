@@ -18,7 +18,7 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
  }
 
-//Sets the new Seeting option to the chrome storage and updates all other settings accordingly
+//Sets the new Setting option to the chrome storage and updates all other settings accordingly
 async function handleSettingClick(event) {
   if(event.path[0].className == "switchInput"){
     return;
@@ -34,9 +34,9 @@ async function handleSettingClick(event) {
 
   await sleep(100);
 
-  //see what to save
+  //See what to save
   if(setting == "PDactivationStatus") {
-    //the below buttons will be set to the general option also
+    //The below buttons will be set to the general option also
     await chrome.storage.local.set({"PDactivationStatus": currentSettingStatus}, function() {});
     await chrome.storage.local.set({"PDsetBGColor": currentSettingStatus}, function() {});
     BGButton = document.getElementById('PDsetBGColor');
@@ -44,7 +44,7 @@ async function handleSettingClick(event) {
     await chrome.storage.local.set({"PDShareData": currentSettingStatus}, function() {});
     BEButton = document.getElementById('PDShareData');
     BEButton.lastChild.firstChild.checked = currentSettingStatus;
-    //disable or enable buttons (If general functionality is disabled, the other functions will be not clickable)
+    //Disable or enable buttons (If general functionality is disabled, the other functions will be not clickable)
     BGButton.lastChild.firstChild.disabled = !currentSettingStatus;
     BEButton.lastChild.firstChild.disabled = !currentSettingStatus;
     //Color the options in grey if they are disabled
@@ -84,7 +84,7 @@ async function handleStatsSharing(currentSettingStatus) {
   });
 }
 
-//only needed for the Prolific Study
+//Only needed for the Prolific Study
 function checkAndSetProlificID(){
   chrome.storage.local.get('PDProlificID', function(items){
     console.log(items["PDProlificID"]);
@@ -103,9 +103,9 @@ function checkAndSetProlificID(){
   });
 }
 
+//Main function, coordinates the popup
 async function init(){
   checkAndSetProlificID();
-  //await analyzePage();
   await chrome.storage.local.get('PDlanguage', function(items){
     language = items['PDlanguage'];
   });
@@ -158,7 +158,7 @@ async function init(){
       var siteInKnown = false;
       for (site of knownSites){
         if(site[0] == currentSiteShort){
-          //set globals
+          //Set globals
           siteStatus = site[1];
           siteReason = site[2];
           if(siteReason == "VTTScan"){
@@ -178,7 +178,7 @@ async function init(){
           break;
         }
       }
-      //if site is not known, set Error text
+      //If site is not known, set Error text
       if(!siteInKnown){
         siteStatus = "unknown";
         siteReason = "noScan";
@@ -190,7 +190,7 @@ async function init(){
   });
   container.appendChild(createElementWithClass('div', 'separatorLine'));
 
-  //settings Switches
+  //Settings Switches
   async function addSetting(optionID, name, explanation){
     var container = createElementWithClass('div', "settingBox");
     container.setAttribute('id', optionID);
@@ -223,7 +223,7 @@ async function init(){
       if(!enabled){
         setting.lastChild.firstChild.checked = false;
 
-        //if general functionality is disabled, block other inputs
+        //If general functionality is disabled, block other inputs
         if(setting.id == "PDactivationStatus"){
           settingB.firstChild.firstChild.classList.toggle('notApplicable');
           settingB.lastChild.firstChild.disabled = true;
@@ -279,17 +279,11 @@ async function init(){
   var infoText = infoBox.appendChild(createElementWithClass('div', 'infoText'));
   infoText.innerHTML = texts.texts.infoBox.infoText[language];
 
-  //Download Stats
-  /* var downloadStatsButton = container.appendChild(createElementWithClass('button', 'downloadStatsButton'));
-  downloadStatsButton.innerHTML = "Download Statistics";
-  downloadStatsButton.addEventListener('click', downloadStats); */
-
   //Add container to page
   document.body.appendChild(container);
-
-
 }
 
+//After the popup is initialized, the texts for the safety estimation are added
 function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
   htmlObject.classList.add(warningType);
   document.body.classList.add(warningType);
@@ -302,7 +296,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     case 'safe': logoSVG.setAttribute('src', 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/images/svgs/PDIcon_green.svg'); break;
   }
   if(VTTStats != null){
-    //Display results
+    //Display results of VTT
     resultText = texts.texts.currentPage.justification.VTTText.result[language];
     resultText += " " + VTTStats[1];
     resultText += " " + texts.texts.currentPage.justification.VTTText.pos[language];
@@ -313,7 +307,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
     htmlObject.childNodes[2].appendChild(document.createElement('br'));
     htmlObject.childNodes[2].appendChild(virusScanResult);
 
-    //Link results
+    //Link VTT results
     var VTTResultsLink = createElementWithClass('a', 'VTTResultsLink');
     var currentSiteB64 = btoa(currentSite).replaceAll('=', '');//Somehow, VTT can't handle '='
     VTTResultsLink.setAttribute('href', 'https://www.virustotal.com/gui/url/' + currentSiteB64);
@@ -324,6 +318,7 @@ function setIdentifierText(htmlObject, currentSite, warningType, warningReason){
 
 }
 
+//User can manually overwrite a warning site, that he trusts --> Marking it as safe
 function markAsSafeSite() {
   writeStats("MarkSafe");
   document.getElementById('clickSafeButton').remove();
@@ -339,6 +334,7 @@ function markAsSafeSite() {
   questionContainer.appendChild(sureNo);
   questionContainer.appendChild(sureYes);
   
+  //Double check that it was the intention of the user to mark it as safe
   function doubleYes(){
     writeStats("MarkSafeYes");
     console.log("Marked as safe");
@@ -362,7 +358,7 @@ function markAsSafeSite() {
       infoArray = [[currentSiteShort, "safe", "userOverwrite", "[]"]].concat(infoArray);
       chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
       chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
-  });
+    });
   }
   function doubleNo(){
     writeStats("MarkSafeNo");
@@ -373,73 +369,17 @@ function markAsSafeSite() {
   document.getElementsByClassName("pageInfos warning")[0].appendChild(questionContainer);
 }
 
-//unused!!
-function downloadStats() {
-  filename = "PDStats";
-  statsArray = []
-  chrome.storage.local.get('PDStats', function(items){
-    statsArray = items['PDStats'];
-    var element = document.createElement('a');
-    var statsArrayString = "[timestamp, id, action performed, siteStatus, reason, pageURL]\n";
-    for (entry of statsArray){
-      statsArrayString += entry + "\n";
-    }
-
-    chrome.storage.local.get('PDLastInjections', function(items){
-      var injectionArray = items['PDLastInjections'];
-      statsArrayString += "\n\nInjection Infos:\n[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
-      for (entry of injectionArray){
-        d = new Date(entry);
-        d = (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(d.getHours() > 12 ? d.getHours() - 12 : d.getHours())+':'+d.getMinutes()+' '+(d.getHours() >= 12 ? "PM" : "AM");
-        statsArrayString += entry + ": " + d + "\n";
-      }
-
-      //aditionally get currently known sites
-      chrome.storage.local.get('PDopenPageInfos', function(items){
-        openPages = statsArray = items['PDopenPageInfos'];
-        statsArrayString += "\n\n\nCurrently known pages: " + openPages.length + "\n";
-        statsArrayString += "[site, status, reason, (if applicable VTT results)]\n"
-        
-        for (entry of openPages){
-          statsArrayString += entry + "\n";
-        }
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
-        element.setAttribute('download', filename);
-        element.style.display = 'none';
-        document.body.appendChild(element);
-
-        element.click();
-      
-        document.body.removeChild(element);
-      });
-
-      //Einkommentieren, wenn wieder NUR das StatsArray runtergeladen werden soll
-  /*     console.log(statsArrayString);
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);//encodeURIComponent(statsArray));
-      element.setAttribute('download', filename);
-    
-      element.style.display = 'none';
-      document.body.appendChild(element);
-    
-      element.click();
-    
-      document.body.removeChild(element); */
-    });
-  });
-
-}
-
+//Send a request to the background script with a stats entry
 function writeStats(type) {
   chrome.storage.local.get('PDShareData', function(items) {
     if(items['PDShareData'] == false && !(type.includes("PDactivationStatus"))) {return;}
     else{
       chrome.runtime.sendMessage({VTTtoCheckURL: "writeStats", statsToWrite: [Date.now(), type, siteStatus, siteReason, currentSiteShort]}, function(response){});
     }
-});
+  });
 }
 
-
-//Beinhaltet alle Texte der Extension auf Englisch und Deutsch
+//Contains all texts the user can see in English and German
 texts = {
   "version": "1.0",
   "languages": {

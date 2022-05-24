@@ -31,8 +31,6 @@ chrome.storage.local.get('PDopenPageInfos', function(items){
     chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
   }
 });
-//For debugging, set OpenPageInfos to []
-//chrome.storage.local.set({'PDopenPageInfos': []}, function() {});
 chrome.storage.local.get('PDStats', function(items){
   if(items['PDStats'] == undefined){
     chrome.storage.local.set({'PDStats': []}, function() {});
@@ -41,8 +39,6 @@ chrome.storage.local.get('PDStats', function(items){
     statsArray = items['PDStats'];
   }
 });
-//For debugging set PDStats to []
-//chrome.storage.local.set({'PDStats': []}, function() {});
 chrome.storage.local.get('PDLastInjections', function(items){
   if(items['PDLastInjections'] == undefined){
     //[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]
@@ -54,23 +50,20 @@ chrome.storage.local.get('PDLastInjections', function(items){
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
 
-    //a safe site was detected, the Plugin's Icon in the toolbar should be set to green
+    //A safe site was detected, the Plugin's Icon in the toolbar should be set to green
     if(request.VTTtoCheckURL === "safeSite"){
-      //console.log("safe BG");
       chrome.action.setIcon({path: "/images/colors/logo_green_16.png", tabId: sender.tab.id});
       writeStats('Popup icon set to green (safeSite)', sender.tab.id, sender.tab.url);
     }
 
-    //a unknown site was detected, the Plugin's Icon in the toolbar should be set to yellow
+    //An unknown site was detected, the Plugin's Icon in the toolbar should be set to yellow
     else if(request.VTTtoCheckURL === "unknownSite"){
-      //console.log("unknown BG");
       chrome.action.setIcon({path: "/images/colors/logo_yellow_16.png", tabId: sender.tab.id});
       writeStats('Popup icon set to yellow (unknownSite)', sender.tab.id, sender.tab.url);
     }
 
-    //a warning site was detected, the Plugin's Icon in the toolbar should be set to red and the badge will be appended by exclamation marks
+    //A warning site was detected, the Plugin's Icon in the toolbar should be set to red and the badge will be appended by exclamation marks
     else if(request.VTTtoCheckURL === "warningSite"){
-      //console.log("warning BG");
       chrome.action.setIcon({path: "/images/colors/logo_red_16.png", tabId: sender.tab.id});
       chrome.action.setBadgeText({text: '!!', tabId: sender.tab.id});
       chrome.action.setBadgeBackgroundColor({color: [255,0,0,255], tabId: sender.tab.id});
@@ -127,7 +120,6 @@ chrome.runtime.onMessage.addListener(
 
     //A script who can't access the current tab's URL needs it
     else if(request.VTTtoCheckURL === "getCurrentTabURL"){
-      //console.log("URL request bekommen");
       chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
         console.log(tabs);
         let url = tabs[0].url;
@@ -141,7 +133,7 @@ chrome.runtime.onMessage.addListener(
       sendResponse({currentID: sender.tab.id})
     }
 
-    //write Stats
+    //Write Stats
     else if(request.VTTtoCheckURL === "writeStats"){
       id=9999;
       try{
@@ -158,7 +150,6 @@ chrome.runtime.onMessage.addListener(
       fileToUpload = request.fileToUpload;
       
       fetch('https://study2.usec.code.unibw-muenchen.de/uploadFile', {
-      //fetch('http://localhost:8000/uploadFile', {
         method: 'POST',
         headers: {filename: filename},
         body: fileToUpload
@@ -184,6 +175,7 @@ async function writeStats(type, tabID, tabURL) {
   });
 }
 
+//Grab tab change for stats
 chrome.tabs.onActivated.addListener(function(activeInfo) {
   writeStats("tabChange", activeInfo.tabId, "//notKnown");
 });
