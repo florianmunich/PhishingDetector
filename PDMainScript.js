@@ -1,10 +1,11 @@
-let url = 'https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json';
+let url =
+    "https://raw.githubusercontent.com/florianmunich/PhishingDetector/main/knownSites.json";
 //Initialize variables
 var allKnownSites;
 var warningSites;
 var safeSites;
 var currentSite = window.location.toString();
-var currentSiteShort = window.location.toString().split('/')[2];
+var currentSiteShort = window.location.toString().split("/")[2];
 var id;
 var siteStatus;
 var siteReason = "noData";
@@ -23,16 +24,15 @@ var recentlyKnownPagesChecking = true;
 var listsChecking = true;
 
 //Start routine if plugin is enabled
-chrome.storage.local.get("PDactivationStatus", function(items){
-    enabled = items['PDactivationStatus'];
-    if(enabled)
-        main()
+chrome.storage.local.get("PDactivationStatus", function (items) {
+    enabled = items["PDactivationStatus"];
+    if (enabled) main();
 });
 
 //Helper Function
 //Waits a given time in milliseconds
 function sleep(milliseconds) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds));
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 //Helper Function
@@ -46,8 +46,8 @@ function createElementWithClass(type, className) {
 //Removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
 function deleteCurrentSiteFromArray(infoArray) {
     var index = 0;
-    for (site of infoArray){
-        if(site[0] == currentSiteShort){
+    for (site of infoArray) {
+        if (site[0] == currentSiteShort) {
             infoArray.splice(index, 1);
             //break;
         }
@@ -58,76 +58,81 @@ function deleteCurrentSiteFromArray(infoArray) {
 
 //Handles all functionalities of the plugin on the site
 //Only is called if the general functionality is enabled in the settings
-async function main(){
+async function main() {
     console.log("PD: Site Scan initiated!");
-    chrome.storage.local.get('PDLastInjections', function(items){
-        lastWarning = items['PDLastInjections'][3];
-      });
+    chrome.storage.local.get("PDLastInjections", function (items) {
+        lastWarning = items["PDLastInjections"][3];
+    });
     writeStats("PDSiteFunctionalityInitiated");
-    await chrome.storage.local.get('PDlanguage', function(items){
-        language = items['PDlanguage'];
+    await chrome.storage.local.get("PDlanguage", function (items) {
+        language = items["PDlanguage"];
     });
     await sleep(1);
 
     //Check if site is in recently opened sites
-    await chrome.storage.local.get("PDopenPageInfos", function(items){
-        var infoArray = items['PDopenPageInfos'];
-        for (site of infoArray){
-            if(site[0] == currentSiteShort){
+    await chrome.storage.local.get("PDopenPageInfos", function (items) {
+        var infoArray = items["PDopenPageInfos"];
+        for (site of infoArray) {
+            if (site[0] == currentSiteShort) {
                 //console.log("PD: Page found in recently visited pages.", site);
                 var VTTinfos = null;
                 siteStatus = site[1];
                 siteReason = site[2];
-                if(siteStatus == "safe"){
+                if (siteStatus == "safe") {
                     safeSite = true;
                     recentlyKnownPagesChecking = false;
                 }
-                if(siteStatus == "warning"){
+                if (siteStatus == "warning") {
                     warningSite = true;
                     recentlyKnownPagesChecking = false;
                 }
-                if(site[2] == 'VTTScan'){
+                if (site[2] == "VTTScan") {
                     VTTinfos = site[3];
                 }
-                processStatus(false,[]);
+                processStatus(false, []);
                 break;
             }
         }
-        checkListsForSite();   
+        checkListsForSite();
     });
 
     //Check if site is in blacklist/whitelist
     async function checkListsForSite() {
-        if(!warningSite & !safeSite){
+        if (!warningSite & !safeSite) {
             await declareSites();
             warningSite = await siteInSuspected(currentSite);
             safeSite = await siteInSafe(currentSite);
             listsChecking = false;
             processStatus(true, []);
-        }
-        else{
+        } else {
             listsChecking = false;
         }
     }
 
     //Check site with virustotal
-    var toCheck = true;//While the checking from the other scripts is not done yet, looping until VTT can be checked
-    while(toCheck){
-        if(recentlyKnownPagesChecking || listsChecking){
+    var toCheck = true; //While the checking from the other scripts is not done yet, looping until VTT can be checked
+    while (toCheck) {
+        if (recentlyKnownPagesChecking || listsChecking) {
             await sleep(1000);
-        }
-        else{
-            if(!warningSite && !safeSite){
-                chrome.storage.local.get("PDopenPageInfos", function(items){
-                    var infoArray = items['PDopenPageInfos'];
+        } else {
+            if (!warningSite && !safeSite) {
+                chrome.storage.local.get("PDopenPageInfos", function (items) {
+                    var infoArray = items["PDopenPageInfos"];
                     infoArray = deleteCurrentSiteFromArray(infoArray);
-                    if(infoArray.length> maxKnownPages){infoArray.pop()}
-                    infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
-                    chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
+                    if (infoArray.length > maxKnownPages) {
+                        infoArray.pop();
+                    }
+                    infoArray = [
+                        [currentSiteShort, "unknown", "noScan"],
+                    ].concat(infoArray);
+                    chrome.storage.local.set(
+                        { PDopenPageInfos: infoArray },
+                        function () {}
+                    );
                 });
                 siteStatus = "unknown";
                 siteReason = "noScan";
-                
+
                 await getVirusTotalInfo(0);
                 await sleep(1000);
             }
@@ -136,102 +141,133 @@ async function main(){
     }
 
     //For every password field: insert the icon
-    var pwElems = document.querySelectorAll('input[type=password]');
-    if(!pwElems.length == 0){
+    var pwElems = document.querySelectorAll("input[type=password]");
+    if (!pwElems.length == 0) {
         inputPDIcon(pwElems);
     }
 
     //Check if the stats schould be uploaded
-    checkUpload()
+    checkUpload();
 }
 
 //Processes the status of a page and sets the known page array
 //Also, arranges the background of the page to be set to red if enabled
-function processStatus(writeStatus, VTTarray){
-    if(safeSite){
-        chrome.storage.local.get("PDopenPageInfos", function(items){
-            var infoArray = items['PDopenPageInfos'];
-            if(infoArray.length> maxKnownPages){infoArray.pop()}
-            if(writeStatus){
+function processStatus(writeStatus, VTTarray) {
+    if (safeSite) {
+        chrome.storage.local.get("PDopenPageInfos", function (items) {
+            var infoArray = items["PDopenPageInfos"];
+            if (infoArray.length > maxKnownPages) {
+                infoArray.pop();
+            }
+            if (writeStatus) {
                 infoArray = deleteCurrentSiteFromArray(infoArray);
-                infoArray = [[currentSiteShort, "safe", siteReason, VTTarray]].concat(infoArray);
-                chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
+                infoArray = [
+                    [currentSiteShort, "safe", siteReason, VTTarray],
+                ].concat(infoArray);
+                chrome.storage.local.set(
+                    { PDopenPageInfos: infoArray },
+                    function () {}
+                );
             }
         });
         siteStatus = "safe";
-        chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
+        chrome.runtime.sendMessage(
+            { VTTtoCheckURL: "safeSite" },
+            function (response) {}
+        );
     }
-    if(warningSite){
-        chrome.storage.local.get("PDopenPageInfos", function(items){
-            var infoArray = items['PDopenPageInfos'];
-            if(infoArray.length> maxKnownPages){infoArray.pop()}
-            if(writeStatus){
+    if (warningSite) {
+        chrome.storage.local.get("PDopenPageInfos", function (items) {
+            var infoArray = items["PDopenPageInfos"];
+            if (infoArray.length > maxKnownPages) {
+                infoArray.pop();
+            }
+            if (writeStatus) {
                 infoArray = deleteCurrentSiteFromArray(infoArray);
-                infoArray = [[currentSiteShort, "warning", siteReason, VTTarray]].concat(infoArray);
-                chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
+                infoArray = [
+                    [currentSiteShort, "warning", siteReason, VTTarray],
+                ].concat(infoArray);
+                chrome.storage.local.set(
+                    { PDopenPageInfos: infoArray },
+                    function () {}
+                );
             }
         });
 
         //Set Background color to red if enabled
-        chrome.storage.local.get("PDsetBGColor", function(items){
-            enabled = items['PDsetBGColor'];
-            if(enabled){
+        chrome.storage.local.get("PDsetBGColor", function (items) {
+            enabled = items["PDsetBGColor"];
+            if (enabled) {
                 console.log("PD: Background set red");
-                document.body.style.backgroundColor = 'red';
+                document.body.style.backgroundColor = "red";
                 writeStats("BGColor set red");
             }
         });
         siteStatus = "warning";
-        chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
+        chrome.runtime.sendMessage(
+            { VTTtoCheckURL: "warningSite" },
+            function (response) {}
+        );
     }
-    if(!warningSite && !safeSite){
-        chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
+    if (!warningSite && !safeSite) {
+        chrome.runtime.sendMessage(
+            { VTTtoCheckURL: "unknownSite" },
+            function (response) {}
+        );
     }
 }
 
 //Redo analysis if security information changes
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-    for(key in changes) {
-      if(key === 'PDopenPageInfos') {
-        PDIcons = document.getElementsByClassName('PDIcon');
-        if(warningSite){
-            chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
-            for (let PDIcon of PDIcons) {
-                PDIcon.firstChild.classList.add('warningSecurityLogo');
-                PDIcon.firstChild.classList.remove('safeSecurityLogo');
-                PDIcon.firstChild.classList.remove('unknownSecurityLogo');
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+    for (key in changes) {
+        if (key === "PDopenPageInfos") {
+            PDIcons = document.getElementsByClassName("PDIcon");
+            if (warningSite) {
+                chrome.runtime.sendMessage(
+                    { VTTtoCheckURL: "warningSite" },
+                    function (response) {}
+                );
+                for (let PDIcon of PDIcons) {
+                    PDIcon.firstChild.classList.add("warningSecurityLogo");
+                    PDIcon.firstChild.classList.remove("safeSecurityLogo");
+                    PDIcon.firstChild.classList.remove("unknownSecurityLogo");
+                }
+            } else if (safeSite) {
+                chrome.runtime.sendMessage(
+                    { VTTtoCheckURL: "safeSite" },
+                    function (response) {}
+                );
+                for (let PDIcon of PDIcons) {
+                    PDIcon.firstChild.classList.remove("warningSecurityLogo");
+                    PDIcon.firstChild.classList.add("safeSecurityLogo");
+                    PDIcon.firstChild.classList.remove("unknownSecurityLogo");
+                }
+            } else {
+                chrome.runtime.sendMessage(
+                    { VTTtoCheckURL: "unknownSite" },
+                    function (response) {}
+                );
+                for (let PDIcon of PDIcons) {
+                    PDIcon.firstChild.classList.remove("warningSecurityLogo");
+                    PDIcon.firstChild.classList.remove("safeSecurityLogo");
+                    PDIcon.firstChild.classList.add("unknownSecurityLogo");
+                }
             }
         }
-        else if(safeSite){
-            chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
-            for (let PDIcon of PDIcons) {
-                PDIcon.firstChild.classList.remove('warningSecurityLogo');
-                PDIcon.firstChild.classList.add('safeSecurityLogo');
-                PDIcon.firstChild.classList.remove('unknownSecurityLogo');
-            }
-        }
-        else {
-            chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
-            for (let PDIcon of PDIcons) {
-                PDIcon.firstChild.classList.remove('warningSecurityLogo');
-                PDIcon.firstChild.classList.remove('safeSecurityLogo');
-                PDIcon.firstChild.classList.add('unknownSecurityLogo');
-            }
-        }
-      }
     }
-  });
+});
 
 //DOwnloads the list of known sites
 async function getknownSites() {
     await fetch(url)
-    .then(res => res.json())
-    .then((out) => {allKnownSites = out;
-    });
+        .then((res) => res.json())
+        .then((out) => {
+            allKnownSites = out;
+        });
 }
 
 //Initializes the downloading of known sites and lists Phishing / Safe sites into arrays
-async function declareSites(){
+async function declareSites() {
     await getknownSites();
     warningSites = allKnownSites.warningSites;
     safeSites = allKnownSites.safeSites;
@@ -240,112 +276,142 @@ async function declareSites(){
 //Attempts to get the virus information from Virustotal.com
 //Receives a backoff, to wait some time if e.g. a rescan was requested
 async function getVirusTotalInfo(backoff) {
-    if(VTTattempts > 3){console.log('PD: I gave up requesting the VTT scan!'); return;}
+    if (VTTattempts > 3) {
+        console.log("PD: I gave up requesting the VTT scan!");
+        return;
+    }
     VTTattempts += 1;
     console.log("PD: VTT initiated!");
-    writeStats('VTTinitiated');
+    writeStats("VTTinitiated");
     await sleep(backoff * VTTattempts * VTTattempts);
-    
-    await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
-        //console.log(response.VTTresult);
-        var resp = response;
 
-        //If site was never scanned before, request a scan
-        if( VTTattempts == 1 && 'error' in resp.VTTresult){
-            console.log("PD:Page not scanned by VTT before!");
-            var i = 0;
-            chrome.runtime.sendMessage({VTTtoCheckURL: "VTTrequestScan"}, function(response) {
-                chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
-                    resp = response;
-                    writeStats('VTTScan requested');
-                    //Load virus scan new, then return and not use old data
-                    getVirusTotalInfo(1000);
-                    return;
-                });
-            });
-            i += 1;
-            
-        }
-        if('error' in resp.VTTresult){getVirusTotalInfo(1000); return;}
-        virusScan = resp.VTTresult.data.attributes.last_analysis_stats;
-        totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
-        positiveVotes = virusScan.harmless;
-        negativeVotes = virusScan.malicious + virusScan.suspicious;
-        if(totalVotes > 10) {
-            if(negativeVotes > 1){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
-                console.log("PD: virus scan: warning");
-                warningSite = true;
-                safeSite = false;
+    await chrome.runtime.sendMessage(
+        { VTTtoCheckURL: "VTTcheck" },
+        function (response) {
+            //console.log(response.VTTresult);
+            var resp = response;
+
+            //If site was never scanned before, request a scan
+            if (VTTattempts == 1 && "error" in resp.VTTresult) {
+                console.log("PD:Page not scanned by VTT before!");
+                var i = 0;
+                chrome.runtime.sendMessage(
+                    { VTTtoCheckURL: "VTTrequestScan" },
+                    function (response) {
+                        chrome.runtime.sendMessage(
+                            { VTTtoCheckURL: "VTTcheck" },
+                            function (response) {
+                                resp = response;
+                                writeStats("VTTScan requested");
+                                //Load virus scan new, then return and not use old data
+                                getVirusTotalInfo(1000);
+                                return;
+                            }
+                        );
+                    }
+                );
+                i += 1;
             }
-            else {
-                warningSite = false;
-                safeSite = true;
+            if ("error" in resp.VTTresult) {
+                getVirusTotalInfo(1000);
+                return;
             }
-            siteReason = 'VTTScan';
-            processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
+            virusScan = resp.VTTresult.data.attributes.last_analysis_stats;
+            totalVotes =
+                virusScan.harmless + virusScan.malicious + virusScan.suspicious;
+            positiveVotes = virusScan.harmless;
+            negativeVotes = virusScan.malicious + virusScan.suspicious;
+            if (totalVotes > 10) {
+                if (negativeVotes > 1) {
+                    //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
+                    console.log("PD: virus scan: warning");
+                    warningSite = true;
+                    safeSite = false;
+                } else {
+                    warningSite = false;
+                    safeSite = true;
+                }
+                siteReason = "VTTScan";
+                processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
+            } else {
+                getVirusTotalInfo(1000);
+            }
         }
-        else{getVirusTotalInfo(1000);}
-      });
+    );
 }
 
 //Places the PDIcon next to all submitted HTML fields
 async function inputPDIcon(pwElems) {
     //console.log("current time - last injection: ", (Date.now() - lastWarning)/1000, "s");
-    if(safeSite && Date.now() > lastWarning + maxTimeWithoutWarning) {//If last warning was shown too long ago, the user shoud be tested again. Only on safe sites!!
+    if (safeSite && Date.now() > lastWarning + maxTimeWithoutWarning) {
+        //If last warning was shown too long ago, the user shoud be tested again. Only on safe sites!!
         warningSite = true;
         safeSite = false;
         realCase = false;
         siteReason = "activationTest";
-        chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
-    }
-    for(let item of pwElems){
-        //Create item svg
-        var newIcon = document.createElement('span');
-        newIcon.className = "PDIcon";
-        var newItemSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        var newItemPath = document.createElementNS(
-            'http://www.w3.org/2000/svg',
-            'path'
+        chrome.runtime.sendMessage(
+            { VTTtoCheckURL: "warningSite" },
+            function (response) {}
         );
-        newItemSVG.setAttribute('fill', '#000000');
-        newItemSVG.setAttribute('viewBox', '0 0 250 250');
-        newItemSVG.setAttribute('class', 'appendedSecurityLogo');
+    }
+    for (let item of pwElems) {
+        //Create item svg
+        var newIcon = document.createElement("span");
+        newIcon.className = "PDIcon";
+        var newItemSVG = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg"
+        );
+        var newItemPath = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+        );
+        newItemSVG.setAttribute("fill", "#000000");
+        newItemSVG.setAttribute("viewBox", "0 0 250 250");
+        newItemSVG.setAttribute("class", "appendedSecurityLogo");
         newItemPath.setAttribute(
-            'd',
-            'M213.97,25.79c-2.34-6.54-9.42-13.88-14.58-15.09C169.27,3.6,138.25,0,107.19,0S46.15,3.38,15.17,10.03C4.45,12.33,.13,17.79,.25,28.89c.11,10.45,0,21.06-.1,31.32-.19,18.62-.39,37.88,.74,56.65,.63,10.64,3.52,21.37,6.58,32.72,.93,3.46,1.88,6.99,2.79,10.59,.47-.22,.93-.45,1.37-.66,3.37-1.63,5.81-2.8,8.03-4.11,17.44-10.32,35.15-20.86,52.28-31.05,43.48-25.88,88.45-52.63,133.08-78.28,9.05-5.2,11.98-11.84,8.95-20.28ZM56.88,83.82l-21.31-27.13,20.84-28.48,20.84,28.16-20.37,27.45Z M213.41,74.99L28.54,184.48c17.62,22.36,49.66,44.33,72.64,49.29,1.51,.33,3.19,.5,4.99,.5,3.39,0,7.12-.61,10.5-1.7,35.73-11.57,63.57-33.07,80.5-62.17,15.92-27.36,21.49-60.22,16.24-95.41Zm-54.65,110.84l-21.27-27.26,20.55-28.09,21.09,27.43-20.37,27.92Z'
+            "d",
+            "M213.97,25.79c-2.34-6.54-9.42-13.88-14.58-15.09C169.27,3.6,138.25,0,107.19,0S46.15,3.38,15.17,10.03C4.45,12.33,.13,17.79,.25,28.89c.11,10.45,0,21.06-.1,31.32-.19,18.62-.39,37.88,.74,56.65,.63,10.64,3.52,21.37,6.58,32.72,.93,3.46,1.88,6.99,2.79,10.59,.47-.22,.93-.45,1.37-.66,3.37-1.63,5.81-2.8,8.03-4.11,17.44-10.32,35.15-20.86,52.28-31.05,43.48-25.88,88.45-52.63,133.08-78.28,9.05-5.2,11.98-11.84,8.95-20.28ZM56.88,83.82l-21.31-27.13,20.84-28.48,20.84,28.16-20.37,27.45Z M213.41,74.99L28.54,184.48c17.62,22.36,49.66,44.33,72.64,49.29,1.51,.33,3.19,.5,4.99,.5,3.39,0,7.12-.61,10.5-1.7,35.73-11.57,63.57-33.07,80.5-62.17,15.92-27.36,21.49-60.22,16.24-95.41Zm-54.65,110.84l-21.27-27.26,20.55-28.09,21.09,27.43-20.37,27.92Z"
         );
         newIcon.appendChild(newItemSVG);
         newItemSVG.appendChild(newItemPath);
 
         //Set safety status
-        if(warningSite){newItemSVG.classList.add('warningSecurityLogo');}
-        else if(safeSite){newItemSVG.classList.add('safeSecurityLogo');}
-        else {newItemSVG.classList.add('unknownSecurityLogo');}
+        if (warningSite) {
+            newItemSVG.classList.add("warningSecurityLogo");
+        } else if (safeSite) {
+            newItemSVG.classList.add("safeSecurityLogo");
+        } else {
+            newItemSVG.classList.add("unknownSecurityLogo");
+        }
 
         item.parentNode.appendChild(newIcon);
         iconAppended = newItemSVG;
 
         var container;
-        
+
         //Include the hover container
-        iconAppended.addEventListener("mouseenter", async function(event) {
-            if(!(container == undefined)){return;}
-            container = buildInfoContainer(iconAppended);
-            iconAppended.classList.add('iconHovered');
-            container.classList.add('hoverContainerOnHover');
-            if(warningSite){
-                warning();
+        iconAppended.addEventListener("mouseenter", async function (event) {
+            if (!(container == undefined)) {
+                return;
             }
-            else if(safeSite){
+            container = buildInfoContainer(iconAppended);
+            iconAppended.classList.add("iconHovered");
+            container.classList.add("hoverContainerOnHover");
+            if (warningSite) {
+                warning();
+            } else if (safeSite) {
                 safe();
             }
-            if(!safeSite && !warningSite){
+            if (!safeSite && !warningSite) {
                 unknown();
             }
 
-            document.body.addEventListener("click", function(event) {
-                if(container == undefined) {return;}
-                iconAppended.classList.remove('iconHovered');
+            document.body.addEventListener("click", function (event) {
+                if (container == undefined) {
+                    return;
+                }
+                iconAppended.classList.remove("iconHovered");
                 container.remove();
                 container = undefined;
                 writeStats("unhover");
@@ -353,17 +419,26 @@ async function inputPDIcon(pwElems) {
             writeStats("hover");
         });
         //Update last injection
-        chrome.storage.local.get('PDLastInjections', function(items){
-            var injectionArray = items['PDLastInjections'];
-            if(safeSite){injectionArray[1] = Date.now();}
-            else if(warningSite){injectionArray[3] = Date.now();}
-            else{injectionArray[2] = Date.now();}
-            async function writeInjectionArray(injectionArray){
-                await sleep(1);//Needed as otherwise an old instance is used :(
-                chrome.storage.local.set({'PDLastInjections': injectionArray}, function(items) {
-                    chrome.storage.local.get({'PDLastInjections': injectionArray}, function(items) {
-                    });
-                });
+        chrome.storage.local.get("PDLastInjections", function (items) {
+            var injectionArray = items["PDLastInjections"];
+            if (safeSite) {
+                injectionArray[1] = Date.now();
+            } else if (warningSite) {
+                injectionArray[3] = Date.now();
+            } else {
+                injectionArray[2] = Date.now();
+            }
+            async function writeInjectionArray(injectionArray) {
+                await sleep(1); //Needed as otherwise an old instance is used :(
+                chrome.storage.local.set(
+                    { PDLastInjections: injectionArray },
+                    function (items) {
+                        chrome.storage.local.get(
+                            { PDLastInjections: injectionArray },
+                            function (items) {}
+                        );
+                    }
+                );
             }
             writeInjectionArray(injectionArray);
         });
@@ -372,29 +447,32 @@ async function inputPDIcon(pwElems) {
 }
 
 //Builds the hover container for a given PDIcon
-function buildInfoContainer(iconAppended){
-    var container = document.createElement('div');
-    container.setAttribute('class', 'hoverContainer');
-    var hoverContainerBackground = document.createElement('div');
-    hoverContainerBackground.setAttribute('class', 'hoverContainerBackground');
+function buildInfoContainer(iconAppended) {
+    var container = document.createElement("div");
+    container.setAttribute("class", "hoverContainer");
+    var hoverContainerBackground = document.createElement("div");
+    hoverContainerBackground.setAttribute("class", "hoverContainerBackground");
     container.appendChild(hoverContainerBackground);
-    var siteInfoText = document.createElement('div');
-    siteInfoText.setAttribute('class', 'siteInfoText');
+    var siteInfoText = document.createElement("div");
+    siteInfoText.setAttribute("class", "siteInfoText");
     siteInfoText.innerHTML = texts.texts.hoverBox.pageUnknown[language];
-    var boxLowerPart = document.createElement('div');
-    boxLowerPart.setAttribute('class', 'boxLowerPart');
-    var separatorLine = document.createElement('div');
-    separatorLine.setAttribute('class', 'separatorLine');
-    var justifyPhish = document.createElement('div');
-    justifyPhish.setAttribute('class', 'justifyPhish');
-    justifyPhish.innerHTML = '';
-    var recommendation = document.createElement('div');
-    recommendation.setAttribute('class', 'recommendation');
-    recommendation.innerHTML = '';
-    var readMore = document.createElement('div');
-    readMore.setAttribute('class', 'readMore');
-    var readMorePage = document.createElement('a');
-    readMorePage.setAttribute('href', texts.texts.hoverBox.detectInfo.url[language]);
+    var boxLowerPart = document.createElement("div");
+    boxLowerPart.setAttribute("class", "boxLowerPart");
+    var separatorLine = document.createElement("div");
+    separatorLine.setAttribute("class", "separatorLine");
+    var justifyPhish = document.createElement("div");
+    justifyPhish.setAttribute("class", "justifyPhish");
+    justifyPhish.innerHTML = "";
+    var recommendation = document.createElement("div");
+    recommendation.setAttribute("class", "recommendation");
+    recommendation.innerHTML = "";
+    var readMore = document.createElement("div");
+    readMore.setAttribute("class", "readMore");
+    var readMorePage = document.createElement("a");
+    readMorePage.setAttribute(
+        "href",
+        texts.texts.hoverBox.detectInfo.url[language]
+    );
     readMorePage.innerHTML = texts.texts.hoverBox.detectInfo.text[language];
     readMore.appendChild(readMorePage);
     hoverContainerBackground.appendChild(siteInfoText);
@@ -405,70 +483,85 @@ function buildInfoContainer(iconAppended){
     hoverContainerBackground.appendChild(boxLowerPart);
 
     var position = iconAppended.getBoundingClientRect();
-    container.style.left = position.left + position.width + 'px';
-    container.style.top = position.top + 10 + 'px';
+    container.style.left = position.left + position.width + "px";
+    container.style.top = position.top + 10 + "px";
 
     document.body.insertBefore(container, document.body.firstChild);
     return container;
 }
 
 //Writes the texts into the hoverbox
-function appendTexts(rating, reason){
-    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
-    var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
-    var recommendation = document.getElementsByClassName('recommendation')[0];
-    siteInfoText.innerHTML = texts.texts.hoverBox.warningType[rating][language] + ": "
-     + currentSiteShort + texts.texts.hoverBox.warningText[rating][language];
-    justifyPhish.innerHTML = texts.texts.hoverBox.warningReason[rating][reason][language];
-    recommendation.innerHTML = texts.texts.hoverBox.actionProposed[rating][language];
+function appendTexts(rating, reason) {
+    var siteInfoText = document.getElementsByClassName("siteInfoText")[0];
+    var justifyPhish = document.getElementsByClassName("justifyPhish")[0];
+    var recommendation = document.getElementsByClassName("recommendation")[0];
+    siteInfoText.innerHTML =
+        texts.texts.hoverBox.warningType[rating][language] +
+        ": " +
+        currentSiteShort +
+        texts.texts.hoverBox.warningText[rating][language];
+    justifyPhish.innerHTML =
+        texts.texts.hoverBox.warningReason[rating][reason][language];
+    recommendation.innerHTML =
+        texts.texts.hoverBox.actionProposed[rating][language];
     //manual ovverrides for attention Test
-    if(siteReason == "activationTest"){
-        siteInfoText.innerHTML = texts.texts.hoverBox.warningType.safe[language] + ": "
-        + currentSiteShort + texts.texts.hoverBox.warningText.safe[language];
-       recommendation.innerHTML = texts.texts.hoverBox.actionProposed.safe[language];
+    if (siteReason == "activationTest") {
+        siteInfoText.innerHTML =
+            texts.texts.hoverBox.warningType.safe[language] +
+            ": " +
+            currentSiteShort +
+            texts.texts.hoverBox.warningText.safe[language];
+        recommendation.innerHTML =
+            texts.texts.hoverBox.actionProposed.safe[language];
     }
 }
 
 //Appends a leave button, if the site was suspected to be insecure
-function appendLeaveButton(){
-    container = document.getElementsByClassName('boxLowerPart')[0];
+function appendLeaveButton() {
+    container = document.getElementsByClassName("boxLowerPart")[0];
     container.removeChild(container.lastChild);
-    leaveButton = createElementWithClass('button', 'leaveButton');
-    leaveButton.setAttribute('onclick', 'window.location = "https://google.com"');
-    leaveButton.setAttribute('onclick', 'writeStats("leaveClick")');
+    leaveButton = createElementWithClass("button", "leaveButton");
+    leaveButton.setAttribute(
+        "onclick",
+        'window.location = "https://google.com"'
+    );
+    leaveButton.setAttribute("onclick", 'writeStats("leaveClick")');
     leaveButton.innerHTML = texts.texts.hoverBox.leaveButton[language];
     container.appendChild(leaveButton);
 }
 
 //Creates all infos in case of a warning site
-function warning(){
-    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
-    if(realCase){siteInfoText.classList.add('siteInfotextWarning');}
-    else{siteInfoText.classList.add('siteInfotextSafe');}
+function warning() {
+    var siteInfoText = document.getElementsByClassName("siteInfoText")[0];
+    if (realCase) {
+        siteInfoText.classList.add("siteInfotextWarning");
+    } else {
+        siteInfoText.classList.add("siteInfotextSafe");
+    }
     appendTexts("warning", siteReason);
     appendLeaveButton();
 }
 
 //Creates all infos in case of a safe site
-function safe(){
-    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
-    siteInfoText.classList.add('siteInfotextSafe');
+function safe() {
+    var siteInfoText = document.getElementsByClassName("siteInfoText")[0];
+    siteInfoText.classList.add("siteInfotextSafe");
     appendTexts("safe", siteReason);
 }
 
 //Creates all infos in case of a unknown site
-function unknown(){
-    var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
-    siteInfoText.classList.add('siteInfotextUnknown');
+function unknown() {
+    var siteInfoText = document.getElementsByClassName("siteInfoText")[0];
+    siteInfoText.classList.add("siteInfotextUnknown");
     appendTexts("unknown", siteReason);
 }
 
 //Checks if a given site is in the blacklist
-async function siteInSuspected(site){
-    for(let warningSiteIndex in warningSites){
+async function siteInSuspected(site) {
+    for (let warningSiteIndex in warningSites) {
         var currWarningSite = warningSites[warningSiteIndex].url;
-        if (site.includes(currWarningSite)){
-            siteStatus = 'warning';
+        if (site.includes(currWarningSite)) {
+            siteStatus = "warning";
             siteReason = "blacklist";
             console.log("PD: Site\n" + site + "\n was suspected (blacklist)");
             return true;
@@ -478,13 +571,15 @@ async function siteInSuspected(site){
 }
 
 //Checks if a given site is in the whitelist
-async function siteInSafe(site){
-    for(let safeSiteIndex in safeSites){
+async function siteInSafe(site) {
+    for (let safeSiteIndex in safeSites) {
         var currSafeSite = safeSites[safeSiteIndex].url;
-        if(site.includes(currSafeSite)){
-            siteStatus = 'safe';
+        if (site.includes(currSafeSite)) {
+            siteStatus = "safe";
             siteReason = "whitelist";
-            console.log("PD: Site\n" + site + "\n was considered safe (whitelist)");
+            console.log(
+                "PD: Site\n" + site + "\n was considered safe (whitelist)"
+            );
             return true;
         }
     }
@@ -492,75 +587,116 @@ async function siteInSafe(site){
 }
 
 //Catch the closing of a page for the stats
-window.addEventListener("beforeunload", function(){
+window.addEventListener("beforeunload", function () {
     writeStats("windowUnload");
 });
 
 //Send a request to the background script with a stats entry
 function writeStats(type) {
-    chrome.storage.local.get('PDShareData', function(items) {
-        if(items['PDShareData'] == false) return;
-        else{
-            chrome.runtime.sendMessage({VTTtoCheckURL: "writeStats", statsToWrite: [Date.now(), type, siteStatus, siteReason, currentSiteShort]}, function(response){});
+    chrome.storage.local.get("PDShareData", function (items) {
+        if (items["PDShareData"] == false) return;
+        else {
+            chrome.runtime.sendMessage(
+                {
+                    VTTtoCheckURL: "writeStats",
+                    statsToWrite: [
+                        Date.now(),
+                        type,
+                        siteStatus,
+                        siteReason,
+                        currentSiteShort,
+                    ],
+                },
+                function (response) {}
+            );
         }
     });
 }
 
 //Checks when the last stats upload was performed and uploads the stats
 function checkUpload() {
-    chrome.storage.local.get('PDShareData', function(items) {
-        if(items['PDShareData'] == false){return;}
-        else{
-        chrome.storage.local.get('PDLastInjections', function(items){
-            function uploadStats() {
-                filename = "PDStats";
-                statsArray = []
-                statsArrayString = "";
+    chrome.storage.local.get("PDShareData", function (items) {
+        if (items["PDShareData"] == false) {
+            return;
+        } else {
+            chrome.storage.local.get("PDLastInjections", function (items) {
+                function uploadStats() {
+                    filename = "PDStats";
+                    statsArray = [];
+                    statsArrayString = "";
 
-                var injectionArray = items['PDLastInjections'];
-                statsArrayString += "[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
-                for (entry of injectionArray){
-                d = new Date(entry);
-                d = d.toISOString();
-                statsArrayString += entry + ": " + d + "\n";
-                }
-
-                chrome.storage.local.get('PDStats', function(items){
-                    statsArray = items['PDStats'];
-                    statsArrayString += "\n\n---Begin list of injections ";
-                    statsArrayString += "[timestamp, id, action performed, siteStatus, reason, pageURL]---\n";
-                    for (entry of statsArray){
-                        statsArrayString += entry + "\n";
+                    var injectionArray = items["PDLastInjections"];
+                    statsArrayString +=
+                        "[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n";
+                    for (entry of injectionArray) {
+                        d = new Date(entry);
+                        d = d.toISOString();
+                        statsArrayString += entry + ": " + d + "\n";
                     }
-                    statsArrayString += "---End of injections---\n"
-                    
-                    //aditionally get currently known sites
-                    chrome.storage.local.get('PDopenPageInfos', function(items){
-                        openPages = statsArray = items['PDopenPageInfos'];
-                        statsArrayString += "\n\nCurrently known pages:\n" + openPages.length + "\n";
-                        statsArrayString += "---Begin list of known pages ";
-                        statsArrayString += "[site, status, reason, (if applicable VTT results)]---\n"
-                        
-                        for (entry of openPages){
-                        statsArrayString += entry + "\n";
+
+                    chrome.storage.local.get("PDStats", function (items) {
+                        statsArray = items["PDStats"];
+                        statsArrayString += "\n\n---Begin list of injections ";
+                        statsArrayString +=
+                            "[timestamp, id, action performed, siteStatus, reason, pageURL]---\n";
+                        for (entry of statsArray) {
+                            statsArrayString += entry + "\n";
                         }
-                        
-                        chrome.storage.local.get('PDIDNumberOfClient', function(items){
-                            filename = 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now());
-                            chrome.runtime.sendMessage({VTTtoCheckURL: "uploadStats", filename: filename, fileToUpload: statsArrayString}, function() {});
-                            console.log("PD: Stats upload started");
-                        });
+                        statsArrayString += "---End of injections---\n";
+
+                        //aditionally get currently known sites
+                        chrome.storage.local.get(
+                            "PDopenPageInfos",
+                            function (items) {
+                                openPages = statsArray =
+                                    items["PDopenPageInfos"];
+                                statsArrayString +=
+                                    "\n\nCurrently known pages:\n" +
+                                    openPages.length +
+                                    "\n";
+                                statsArrayString +=
+                                    "---Begin list of known pages ";
+                                statsArrayString +=
+                                    "[site, status, reason, (if applicable VTT results)]---\n";
+
+                                for (entry of openPages) {
+                                    statsArrayString += entry + "\n";
+                                }
+
+                                chrome.storage.local.get(
+                                    "PDIDNumberOfClient",
+                                    function (items) {
+                                        filename =
+                                            "PDStats_" +
+                                            items["PDIDNumberOfClient"] +
+                                            "_" +
+                                            String(Date.now());
+                                        chrome.runtime.sendMessage(
+                                            {
+                                                VTTtoCheckURL: "uploadStats",
+                                                filename: filename,
+                                                fileToUpload: statsArrayString,
+                                            },
+                                            function () {}
+                                        );
+                                        console.log("PD: Stats upload started");
+                                    }
+                                );
+                            }
+                        );
                     });
-                });
-            
-            }
-            var lastUpload = items['PDLastInjections'][4];
-            console.log("PD: Time since last Stats Upload: ", (Date.now() - lastUpload)/1000, "s");
-            if(Date.now() > lastUpload + uploadInterval){
-                uploadStats();
-                waitAndUpdateUploadTime();
-            }
-        });
+                }
+                var lastUpload = items["PDLastInjections"][4];
+                console.log(
+                    "PD: Time since last Stats Upload: ",
+                    (Date.now() - lastUpload) / 1000,
+                    "s"
+                );
+                if (Date.now() > lastUpload + uploadInterval) {
+                    uploadStats();
+                    waitAndUpdateUploadTime();
+                }
+            });
         }
     });
 }
@@ -568,146 +704,158 @@ function checkUpload() {
 //Sets the Upload Time into the chrome storage
 async function waitAndUpdateUploadTime() {
     await sleep(1000);
-    chrome.storage.local.get('PDLastInjections', function(items){
-    var pdLastInjectionsUpdate = items['PDLastInjections'];
-    pdLastInjectionsUpdate[4] = Date.now();
-    chrome.storage.local.set({'PDLastInjections': pdLastInjectionsUpdate}, function() {});
+    chrome.storage.local.get("PDLastInjections", function (items) {
+        var pdLastInjectionsUpdate = items["PDLastInjections"];
+        pdLastInjectionsUpdate[4] = Date.now();
+        chrome.storage.local.set(
+            { PDLastInjections: pdLastInjectionsUpdate },
+            function () {}
+        );
     });
 }
 
 //Contains all texts the user can see in English and German
 var texts = {
-    "version": "1.0",
-    "languages": {
-        "english": "English",
-        "german": "Deutsch"
+    version: "1.0",
+    languages: {
+        english: "English",
+        german: "Deutsch",
     },
-    "texts": {
-        "hoverBox": {
-            "warningType": {
-                "warning": {
-                    "english": "Warning",
-                    "german" : "Warnung"
+    texts: {
+        hoverBox: {
+            warningType: {
+                warning: {
+                    english: "Warning",
+                    german: "Warnung",
                 },
-                "moderate": {
-                    "english": "Caution",
-                    "german" : "Vorsicht"
+                moderate: {
+                    english: "Caution",
+                    german: "Vorsicht",
                 },
-                "safe": {
-                    "english": "Safe site",
-                    "german" : "Sicher"
+                safe: {
+                    english: "Safe site",
+                    german: "Sicher",
                 },
-                "unknown": {
-                    "english": "Caution",
-                    "german" : "Vorsicht"
-                }
+                unknown: {
+                    english: "Caution",
+                    german: "Vorsicht",
+                },
             },
-            "warningText": {
-                "warning": {
-                        "english": " is probably  NOT safe!",
-                        "german" : " ist wahrscheinlich  NICHT sicher!"
+            warningText: {
+                warning: {
+                    english: " is probably  NOT safe!",
+                    german: " ist wahrscheinlich  NICHT sicher!",
                 },
-                "safe": {
-                    "english": " is probably safe!",
-                    "german" : " ist wahrscheinlich sicher!"
+                safe: {
+                    english: " is probably safe!",
+                    german: " ist wahrscheinlich sicher!",
                 },
-                "unknown": {
-                    "english": " is not known to us!",
-                    "german" : " kennen wir nicht!"
-                }
+                unknown: {
+                    english: " is not known to us!",
+                    german: " kennen wir nicht!",
+                },
             },
-            "warningReason": {
-                "warning": {
-                    "blacklist": {
-                        "english": "Reason: We found the web page in a blacklist of phishing sites!",
-                        "german" : "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!"
+            warningReason: {
+                warning: {
+                    blacklist: {
+                        english:
+                            "Reason: We found the web page in a blacklist of phishing sites!",
+                        german: "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!",
                     },
-                    "VTTScan": {
-                        "english": "Reason: We ran a virus scan of this page! You can access the result in the popup.",
-                        "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht! Sie können das Ergebnis im Popup einsehen."
+                    VTTScan: {
+                        english:
+                            "Reason: We ran a virus scan of this page! You can access the result in the popup.",
+                        german: "Grund: Wir haben einen Virenscan dieser Webseite gemacht! Sie können das Ergebnis im Popup einsehen.",
                     },
-                    "activationTest": {
-                        "english":"We only tested your attention (1 time per 3 days). Good job!",
-                        "german": "Wir haben nur Ihre Aufmerksamkeit getestet (1 mal pro 3 Tagen). Gute Arbeit!"
-                    }
-                },
-                "safe": {
-                    "whitelist": {
-                        "english": "Reason: We found the site our database.",
-                        "german" : "Grund: Wir haben die Seite in unserer Datenbank gefunden."
+                    activationTest: {
+                        english:
+                            "We only tested your attention (1 time per 3 days). Good job!",
+                        german: "Wir haben nur Ihre Aufmerksamkeit getestet (1 mal pro 3 Tagen). Gute Arbeit!",
                     },
-                    "VTTScan": {
-                        "english": "Reason: We ran a virus scan of this page!",
-                        "german" : "Grund: Wir haben einen Virenscan dieser Webseite gemacht!"
+                },
+                safe: {
+                    whitelist: {
+                        english: "Reason: We found the site our database.",
+                        german: "Grund: Wir haben die Seite in unserer Datenbank gefunden.",
                     },
-                    "userOverwrite": {
-                      "english": " was detected as fradulent by us, but you marked it as safe.",
-                      "german": "wurde von uns als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert."
-                    }
-                },
-                "unknown": {
-                    "noData": {
-                        "english": "Reason: We could not find the site in our databases.",
-                        "german" : "Grund: Wir konnten die Seite nicht in unseren Datenbanken finden."
+                    VTTScan: {
+                        english: "Reason: We ran a virus scan of this page!",
+                        german: "Grund: Wir haben einen Virenscan dieser Webseite gemacht!",
                     },
-                    "noScan": {
-                        "english": "Reason: The site is not in our databases and no virus scan was performed so far.",
-                        "german" : "Grund: Die Seite ist nicht in unseren Datenbanken und es sie wurde bisher nicht gescannt."
-                    }
-                }
-            },
-            "actionProposed": {
-                "warning": {
-                    "english": "Recommendation: Leave this page! Do not enter any personal data!",
-                    "german" : "Empfehlung: Geben Sie keine persönlichen Daten ein!"
+                    userOverwrite: {
+                        english:
+                            " was detected as fradulent by us, but you marked it as safe.",
+                        german: "wurde von uns als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert.",
+                    },
                 },
-                "safe": {
-                    "english": "You can enter your data here with no concerns.",
-                    "german" : "Sie können Ihre Daten ohne Bedenken eingeben."
+                unknown: {
+                    noData: {
+                        english:
+                            "Reason: We could not find the site in our databases.",
+                        german: "Grund: Wir konnten die Seite nicht in unseren Datenbanken finden.",
+                    },
+                    noScan: {
+                        english:
+                            "Reason: The site is not in our databases and no virus scan was performed so far.",
+                        german: "Grund: Die Seite ist nicht in unseren Datenbanken und es sie wurde bisher nicht gescannt.",
+                    },
                 },
-                "unknown": {
-                    "english": "Make sure you are on a valid page!",
-                    "german" : "Stellen Sie sicher auf der richtigen Seite zu sein!"
-                }
             },
-            "detectInfo": {
-                "text": {
-                    "english": "How to detect a Phishing Page",
-                    "german": "Wie man Phishing Seiten erkennt"
+            actionProposed: {
+                warning: {
+                    english:
+                        "Recommendation: Leave this page! Do not enter any personal data!",
+                    german: "Empfehlung: Geben Sie keine persönlichen Daten ein!",
                 },
-                "url": {
-                    "english": "https://www.wildfirecu.org/education-and-resources/blog/blog-post/wildfire-blog/how-to-spot-a-phishing-website",
-                    "german": "https://www.bsi.bund.de/DE/Themen/Verbraucherinnen-und-Verbraucher/Cyber-Sicherheitslage/Methoden-der-Cyber-Kriminalitaet/Spam-Phishing-Co/Passwortdiebstahl-durch-Phishing/Wie-erkenne-ich-Phishing-in-E-Mails-und-auf-Webseiten/wie-erkenne-ich-phishing-in-e-mails-und-auf-webseiten_node.html"
-                }
+                safe: {
+                    english: "You can enter your data here with no concerns.",
+                    german: "Sie können Ihre Daten ohne Bedenken eingeben.",
+                },
+                unknown: {
+                    english: "Make sure you are on a valid page!",
+                    german: "Stellen Sie sicher auf der richtigen Seite zu sein!",
+                },
             },
-            "pageUnknown": {
-                "english": "We currently do not have information about this page.",
-                "german": "Wir haben derzeit keine Informationen über diese Seite."
+            detectInfo: {
+                text: {
+                    english: "How to detect a Phishing Page",
+                    german: "Wie man Phishing Seiten erkennt",
+                },
+                url: {
+                    english:
+                        "https://www.wildfirecu.org/education-and-resources/blog/blog-post/wildfire-blog/how-to-spot-a-phishing-website",
+                    german: "https://www.bsi.bund.de/DE/Themen/Verbraucherinnen-und-Verbraucher/Cyber-Sicherheitslage/Methoden-der-Cyber-Kriminalitaet/Spam-Phishing-Co/Passwortdiebstahl-durch-Phishing/Wie-erkenne-ich-Phishing-in-E-Mails-und-auf-Webseiten/wie-erkenne-ich-phishing-in-e-mails-und-auf-webseiten_node.html",
+                },
             },
-            "leaveButton": {
-                "english": "Leave page",
-                "german": "Seite verlassen"
-            }
+            pageUnknown: {
+                english:
+                    "We currently do not have information about this page.",
+                german: "Wir haben derzeit keine Informationen über diese Seite.",
+            },
+            leaveButton: {
+                english: "Leave page",
+                german: "Seite verlassen",
+            },
         },
-        "settings": {
-            "textA": {
-                "english": "bla",
-                "german" : "blaDeutsch"
+        settings: {
+            textA: {
+                english: "bla",
+                german: "blaDeutsch",
             },
-            "textB": {
-                "english": "bla",
-                "german" : "blaDeutsch"
-            }
+            textB: {
+                english: "bla",
+                german: "blaDeutsch",
+            },
         },
-        "popup": {
-            "textA": {
-                "english": "bla",
-                "german" : "blaDeutsch"
+        popup: {
+            textA: {
+                english: "bla",
+                german: "blaDeutsch",
             },
-            "textB": {
-                "english": "bla",
-                "german" : "blaDeutsch"
-            }
-        }
-    }
+            textB: {
+                english: "bla",
+                german: "blaDeutsch",
+            },
+        },
+    },
 };

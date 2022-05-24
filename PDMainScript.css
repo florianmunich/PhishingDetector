@@ -9,11 +9,11 @@
     margin: 5px;
 }
 
-.warningSecurityLogo{
+.warningSecurityLogo {
     fill: tomato;
 }
 
-.unknownSecurityLogo{
+.unknownSecurityLogo {
     fill: #fbba2e;
 }
 
@@ -21,15 +21,15 @@
     fill: grey;
 }
 
-.safeSecurityLogo{
-    fill:mediumseagreen;
+.safeSecurityLogo {
+    fill: mediumseagreen;
 }
 
 /* .iconHovered {
     fill: white;
 } */
 
-.iconInfoText{
+.iconInfoText {
     visibility: hidden;
     width: 120px;
     background-color: #555;
@@ -46,19 +46,18 @@
     transition: opacity 0.3s;
 }
 
-  .appendedSecurityLogo:hover .iconInfoText {
+.appendedSecurityLogo:hover .iconInfoText {
     visibility: visible;
     opacity: 1;
-  }
-
+}
 
 /****************** HOVER CONTAINER**********************/
 
 .hoverContainer {
     position: absolute;
-    z-index:3000;
+    z-index: 3000;
     width: 300px;
-    font-family: 'Roboto';
+    font-family: "Roboto";
     font-size: 12pt;
     font-weight: bold;
     text-align: center;
@@ -66,7 +65,7 @@
     border-radius: 10px;
 }
 
-.hoverContainerBackground div{
+.hoverContainerBackground div {
     padding: 8px;
 }
 
@@ -96,31 +95,30 @@
 }
 
 .justifyPhish {
-    font-weight:500;
+    font-weight: 500;
 }
 
 .hoverContainerBackground .boxLowerPart .separatorLine {
     align-items: center;
     height: 1px;
-    background: #8D9386;
+    background: #8d9386;
     padding: 0px;
     margin: 5px 15px;
 }
 
 .readMore {
     white-space: pre-line;
-    font-weight:500;
+    font-weight: 500;
 }
 
-.readMore a{
-    color:#3366cc;
+.readMore a {
+    color: #3366cc;
 }
-
 
 /****************** BELONGING **********************/
 .belongingObject {
     position: absolute;
     z-index: 3000;
     top: 0;
-    left: 0
+    left: 0;
 }

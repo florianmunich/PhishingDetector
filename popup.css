@@ -1,17 +1,17 @@
-@import url('https://fonts.googleapis.com/css?family=Roboto');
+@import url("https://fonts.googleapis.com/css?family=Roboto");
 
-body{
+body {
     background-color: mediumseagreen;
 }
-body.warning{
-    background-color:tomato;
+body.warning {
+    background-color: tomato;
 }
-body.unknown{
+body.unknown {
     background-color: #fbba2e;
 }
 
 /******************************************** General ****************************************/
-.popupContainer{
+.popupContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,21 +21,24 @@ body.unknown{
     /* height: 500px; */
     background-color: #eeeeee;
 
-    z-index:3000;
-    font-family: 'Roboto';
+    z-index: 3000;
+    font-family: "Roboto";
     font-size: 11pt;
     font-weight: bold;
     text-align: left;
     border-radius: 10px;
 }
 
-.pageInfos, .settings, .infos{
-    font-family: 'Roboto';
+.pageInfos,
+.settings,
+.infos {
+    font-family: "Roboto";
     color: #707070;
     margin: 10px 15px;
 }
 
-.identifier, .currentPageColored {
+.identifier,
+.currentPageColored {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -51,11 +54,11 @@ body.unknown{
     align-items: center;
 }
 
-.logo{
+.logo {
     position: static;
 }
 
-.logo IMG{
+.logo IMG {
     width: 35px;
     margin: 0px 5px 0px 0px;
 }
@@ -86,7 +89,7 @@ body.unknown{
     position: static;
     width: 90%;
     height: 1px;
-    background: #474C59;
+    background: #474c59;
 }
 
 .currentPageText {
@@ -96,7 +99,7 @@ body.unknown{
 .currentPageIMG {
     width: 60px;
     margin: 0px 10px 0px 0px;
-    -w-embedSVG:yes;
+    -w-embedsvg: yes;
 }
 
 .currentPageShortIndication {
@@ -104,11 +107,11 @@ body.unknown{
 }
 
 .warning .currentPageColored {
-    color: tomato;   
+    color: tomato;
 }
 
 .safe .currentPageColored {
-    color: mediumseagreen;   
+    color: mediumseagreen;
 }
 
 .unknown .currentPageColored {
@@ -179,8 +182,8 @@ body.unknown{
     right: 0;
     bottom: 0;
     background-color: #ccc;
-    -webkit-transition: .4s;
-    transition: .4s;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
 }
 
 .slider:before {
@@ -191,16 +194,16 @@ body.unknown{
     left: 4px;
     bottom: 4px;
     background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
 }
 
 input:checked + .slider {
-    background-color: #2196F3;
+    background-color: #2196f3;
 }
 
 input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
+    box-shadow: 0 0 1px #2196f3;
 }
 
 input:checked + .slider:before {

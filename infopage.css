@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Roboto');
+@import url("https://fonts.googleapis.com/css?family=Roboto");
 
 :root {
     color: midnightblue;
@@ -20,7 +20,7 @@ body {
     background-color: #eeeeee;
 
     z-index: 3000;
-    font-family: 'Roboto';
+    font-family: "Roboto";
     font-size: 13pt;
     line-height: 1.2;
     font-weight: bold;
@@ -35,7 +35,7 @@ body {
 .pageInfos,
 .settings,
 .infos {
-    font-family: 'Roboto';
+    font-family: "Roboto";
     margin: 10px 15px;
 }
 .identifier {
