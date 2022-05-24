@@ -8,15 +8,22 @@ var siteReason;
 var VTTStats = null;
 var currentSiteShort;
 
+//When the popup is opened, start the routine to display everything
+init();
+
+//Helper Function
+//Waits a given time in milliseconds
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+//Helper Function
+//Creates an HTML object and adds a class
 function createElementWithClass(type, className) {
   const element = document.createElement(type);
   element.className = className;
   return element;
 }
-
-function sleep(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds));
- }
 
 //Sets the new Setting option to the chrome storage and updates all other settings accordingly
 async function handleSettingClick(event) {
@@ -87,16 +94,15 @@ async function handleStatsSharing(currentSettingStatus) {
 //Only needed for the Prolific Study
 function checkAndSetProlificID(){
   chrome.storage.local.get('PDProlificID', function(items){
-    console.log(items["PDProlificID"]);
+    /*console.log(items["PDProlificID"]);
     chrome.storage.local.get('PDIDNumberOfClient', function(items){
       console.log(items["PDIDNumberOfClient"]);
-    });
+    }); */
     if (items['PDProlificID'] == undefined || items['PDProlificID'] == "") {
       var prolificID = "";
       while((prolificID == null || prolificID.length < 16) && prolificID != "none") {//should be length 24
         prolificID = window.prompt('Enter your Prolific ID. Type "none" if you are not part of the study. \nIMPORTANT: Enter the ID correctly and without spaces!');
       }
-      console.log(prolificID);
       chrome.storage.local.set({"PDProlificID": prolificID}, function() {});
       if(!(prolificID == "none")){chrome.storage.local.set({'PDIDNumberOfClient': prolificID}, function() {});}
     }
@@ -342,13 +348,13 @@ function markAsSafeSite() {
     chrome.storage.local.get("PDopenPageInfos", function(items){
       var infoArray = items['PDopenPageInfos'];
       if(infoArray.length> 1000){infoArray.pop()}
-      //removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
+      //Removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
       function deleteCurrentSiteFromArray(infoArray) {
         var index = 0;
         for (site of infoArray){
             if(site[0] == currentSiteShort){
                 infoArray.splice(index, 1);
-                //break;
+                //break; //Theoretically possible, to be 100% sure: check all further pages
             }
             index += 1;
         }
@@ -547,5 +553,3 @@ texts = {
     }
   }
 };
-
-init();

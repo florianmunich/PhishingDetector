@@ -22,21 +22,28 @@ var currentlyWritingInjections = false;
 var recentlyKnownPagesChecking = true;
 var listsChecking = true;
 
+//Start routine if plugin is enabled
+chrome.storage.local.get("PDactivationStatus", function(items){
+    enabled = items['PDactivationStatus'];
+    if(enabled)
+        main()
+});
+
 //Helper Function
-//waits a given time in milliseconds
+//Waits a given time in milliseconds
 function sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
 //Helper Function
-//creates an HTML object and adds a class
+//Creates an HTML object and adds a class
 function createElementWithClass(type, className) {
     const element = document.createElement(type);
     element.className = className;
     return element;
 }
 
-//removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
+//Removes all occurences of "currentSiteShort" from an array, where the name is stored in first positions of arrays
 function deleteCurrentSiteFromArray(infoArray) {
     var index = 0;
     for (site of infoArray){
@@ -49,8 +56,8 @@ function deleteCurrentSiteFromArray(infoArray) {
     return infoArray;
 }
 
-//handles all functionalities of the plugin on the site
-//only is called if the general functionality is enabled in the settings
+//Handles all functionalities of the plugin on the site
+//Only is called if the general functionality is enabled in the settings
 async function main(){
     console.log("PD: Site Scan initiated!");
     chrome.storage.local.get('PDLastInjections', function(items){
@@ -62,7 +69,7 @@ async function main(){
     });
     await sleep(1);
 
-    //check if site is in recently opened sites
+    //Check if site is in recently opened sites
     await chrome.storage.local.get("PDopenPageInfos", function(items){
         var infoArray = items['PDopenPageInfos'];
         for (site of infoArray){
@@ -89,7 +96,7 @@ async function main(){
         checkListsForSite();   
     });
 
-    //check if site is in blacklist/whitelist
+    //Check if site is in blacklist/whitelist
     async function checkListsForSite() {
         if(!warningSite & !safeSite){
             await declareSites();
@@ -103,8 +110,8 @@ async function main(){
         }
     }
 
-    //check site with virustotal
-    var toCheck = true;//while the checking from the other scripts is not done yet, looping until VTT can be checked
+    //Check site with virustotal
+    var toCheck = true;//While the checking from the other scripts is not done yet, looping until VTT can be checked
     while(toCheck){
         if(recentlyKnownPagesChecking || listsChecking){
             await sleep(1000);
@@ -128,15 +135,18 @@ async function main(){
         }
     }
 
-    //for every password field insert the icon
+    //For every password field: insert the icon
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
         inputPDIcon(pwElems);
     }
 
+    //Check if the stats schould be uploaded
     checkUpload()
 }
 
+//Processes the status of a page and sets the known page array
+//Also, arranges the background of the page to be set to red if enabled
 function processStatus(writeStatus, VTTarray){
     if(safeSite){
         chrome.storage.local.get("PDopenPageInfos", function(items){
@@ -152,7 +162,6 @@ function processStatus(writeStatus, VTTarray){
         chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
     }
     if(warningSite){
-        console.log("PD: warning site!");
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             if(infoArray.length> maxKnownPages){infoArray.pop()}
@@ -179,13 +188,6 @@ function processStatus(writeStatus, VTTarray){
         chrome.runtime.sendMessage({VTTtoCheckURL: "unknownSite"}, function(response) {});
     }
 }
-
-//Start routine if plugin is enabled
-chrome.storage.local.get("PDactivationStatus", function(items){
-    enabled = items['PDactivationStatus'];
-    if(enabled)
-        main()
-});
 
 //Redo analysis if security information changes
 chrome.storage.onChanged.addListener(function(changes, namespace) {
@@ -220,7 +222,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
     }
   });
 
-//Lädt die Liste der bekannten Seiten herunter
+//DOwnloads the list of known sites
 async function getknownSites() {
     await fetch(url)
     .then(res => res.json())
@@ -228,13 +230,15 @@ async function getknownSites() {
     });
 }
 
-//ruft Liste der bekannten Seiten ab und liest Phishing/Safe Seiten in Arrays aus
+//Initializes the downloading of known sites and lists Phishing / Safe sites into arrays
 async function declareSites(){
     await getknownSites();
     warningSites = allKnownSites.warningSites;
     safeSites = allKnownSites.safeSites;
 }
 
+//Attempts to get the virus information from Virustotal.com
+//Receives a backoff, to wait some time if e.g. a rescan was requested
 async function getVirusTotalInfo(backoff) {
     if(VTTattempts > 3){console.log('PD: I gave up requesting the VTT scan!'); return;}
     VTTattempts += 1;
@@ -246,7 +250,7 @@ async function getVirusTotalInfo(backoff) {
         //console.log(response.VTTresult);
         var resp = response;
 
-        //if site was never scanned before, request a scan
+        //If site was never scanned before, request a scan
         if( VTTattempts == 1 && 'error' in resp.VTTresult){
             console.log("PD:Page not scanned by VTT before!");
             var i = 0;
@@ -254,7 +258,7 @@ async function getVirusTotalInfo(backoff) {
                 chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
                     resp = response;
                     writeStats('VTTScan requested');
-                    //load virus scan new, then return and not use old data
+                    //Load virus scan new, then return and not use old data
                     getVirusTotalInfo(1000);
                     return;
                 });
@@ -282,10 +286,9 @@ async function getVirusTotalInfo(backoff) {
         }
         else{getVirusTotalInfo(1000);}
       });
-    //return;
 }
 
-//Platziert das PD Icon neben allen übergebenen Feldern
+//Places the PDIcon next to all submitted HTML fields
 async function inputPDIcon(pwElems) {
     //console.log("current time - last injection: ", (Date.now() - lastWarning)/1000, "s");
     if(safeSite && Date.now() > lastWarning + maxTimeWithoutWarning) {//If last warning was shown too long ago, the user shoud be tested again. Only on safe sites!!
@@ -296,7 +299,7 @@ async function inputPDIcon(pwElems) {
         chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
     }
     for(let item of pwElems){
-        //create item svg
+        //Create item svg
         var newIcon = document.createElement('span');
         newIcon.className = "PDIcon";
         var newItemSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -314,7 +317,7 @@ async function inputPDIcon(pwElems) {
         newIcon.appendChild(newItemSVG);
         newItemSVG.appendChild(newItemPath);
 
-        //set safe status
+        //Set safety status
         if(warningSite){newItemSVG.classList.add('warningSecurityLogo');}
         else if(safeSite){newItemSVG.classList.add('safeSecurityLogo');}
         else {newItemSVG.classList.add('unknownSecurityLogo');}
@@ -324,6 +327,7 @@ async function inputPDIcon(pwElems) {
 
         var container;
         
+        //Include the hover container
         iconAppended.addEventListener("mouseenter", async function(event) {
             if(!(container == undefined)){return;}
             container = buildInfoContainer(iconAppended);
@@ -348,14 +352,14 @@ async function inputPDIcon(pwElems) {
             });
             writeStats("hover");
         });
-        //update last injection
+        //Update last injection
         chrome.storage.local.get('PDLastInjections', function(items){
             var injectionArray = items['PDLastInjections'];
             if(safeSite){injectionArray[1] = Date.now();}
             else if(warningSite){injectionArray[3] = Date.now();}
             else{injectionArray[2] = Date.now();}
             async function writeInjectionArray(injectionArray){
-                await sleep(1);//needed as otherwise an old instance is used :(
+                await sleep(1);//Needed as otherwise an old instance is used :(
                 chrome.storage.local.set({'PDLastInjections': injectionArray}, function(items) {
                     chrome.storage.local.get({'PDLastInjections': injectionArray}, function(items) {
                     });
@@ -367,6 +371,7 @@ async function inputPDIcon(pwElems) {
     writeStats("icon");
 }
 
+//Builds the hover container for a given PDIcon
 function buildInfoContainer(iconAppended){
     var container = document.createElement('div');
     container.setAttribute('class', 'hoverContainer');
@@ -407,7 +412,7 @@ function buildInfoContainer(iconAppended){
     return container;
 }
 
-//writes the texts into the hoverbox
+//Writes the texts into the hoverbox
 function appendTexts(rating, reason){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
@@ -424,6 +429,7 @@ function appendTexts(rating, reason){
     }
 }
 
+//Appends a leave button, if the site was suspected to be insecure
 function appendLeaveButton(){
     container = document.getElementsByClassName('boxLowerPart')[0];
     container.removeChild(container.lastChild);
@@ -568,7 +574,6 @@ async function waitAndUpdateUploadTime() {
     chrome.storage.local.set({'PDLastInjections': pdLastInjectionsUpdate}, function() {});
     });
 }
-
 
 //Contains all texts the user can see in English and German
 var texts = {
