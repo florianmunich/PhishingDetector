@@ -127,6 +127,7 @@ chrome.runtime.onMessage.addListener(
     else if(request.VTTtoCheckURL === "getCurrentTabURL"){
       //console.log("URL request bekommen");
       chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+        console.log(tabs);
         let url = tabs[0].url;
         urlShort = url.split('/')[2];
         sendResponse({currentURL: urlShort});
@@ -140,7 +141,6 @@ chrome.runtime.onMessage.addListener(
 
     //write Stats
     else if(request.VTTtoCheckURL === "writeStats"){
-      console.log(request.statsToWrite);
       id=9999;
       try{
         id = sender.tab.id;
@@ -150,12 +150,13 @@ chrome.runtime.onMessage.addListener(
       chrome.storage.local.set({'PDStats': statsArray}, function() {});
     }
 
+    //Upload Stats
     else if(request.VTTtoCheckURL === "uploadStats"){
       filename = request.filename;
       fileToUpload = request.fileToUpload;
       
-      //fetch('https://study2.usec.code.unibw-muenchen.de/', {
-        fetch('http://localhost:8000/uploadFile', {
+      fetch('https://study2.usec.code.unibw-muenchen.de/', {
+        //fetch('http://localhost:8000/uploadFile', {
         method: 'POST',
         headers: {filename: filename},
         body: fileToUpload
