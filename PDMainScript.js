@@ -15,9 +15,12 @@ var siteFromKnown = false;
 const maxKnownPages = 1000;
 var language = "english"; //Default, can be overwritten by chrome storage
 var lastWarning;
-const maxTimeWithoutWarning = 86400000; //For the study a warning will be inserted every x time
+const uploadInterval = 3600000; //For the study the statiscitcs will be uploaded every hour, therefore every 3600.000 ms
+const maxTimeWithoutWarning = 259200000; //For the study a warning will be inserted every 3 days, therefore every 259200.000 ms
 var realCase = true; //For testing the user's attention this will be set to false once a while
 var currentlyWritingInjections = false;
+var recentlyKnownPagesChecking = true;
+var listsChecking = true;
 
 //Helper Function
 //waits a given time in milliseconds
@@ -47,7 +50,7 @@ function deleteCurrentSiteFromArray(infoArray) {
 }
 
 //handles all functionalities of the plugin on the site
-//only is called if the general functionality is enabled
+//only is called if the general functionality is enabled in the settings
 async function main(){
     console.log("PD: Site Scan initiated!");
     chrome.storage.local.get('PDLastInjections', function(items){
@@ -64,12 +67,18 @@ async function main(){
         var infoArray = items['PDopenPageInfos'];
         for (site of infoArray){
             if(site[0] == currentSiteShort){
-                console.log("Page found in recently visited pages.");
+                //console.log("PD: Page found in recently visited pages.", site);
                 var VTTinfos = null;
                 siteStatus = site[1];
                 siteReason = site[2];
-                if(siteStatus == "safe"){safeSite = true;}
-                if(siteStatus == "warning"){warningSite = true;}
+                if(siteStatus == "safe"){
+                    safeSite = true;
+                    recentlyKnownPagesChecking = false;
+                }
+                if(siteStatus == "warning"){
+                    warningSite = true;
+                    recentlyKnownPagesChecking = false;
+                }
                 if(site[2] == 'VTTScan'){
                     VTTinfos = site[3];
                 }
@@ -77,39 +86,54 @@ async function main(){
                 break;
             }
         }
+        checkListsForSite();   
     });
 
-    await sleep(10);
     //check if site is in blacklist/whitelist
-    if(!warningSite & !safeSite){
-        await declareSites();
-        warningSite = await siteInSuspected(currentSite);
-        safeSite = await siteInSafe(currentSite);
-        processStatus(true, []);
+    async function checkListsForSite() {
+        if(!warningSite & !safeSite){
+            await declareSites();
+            warningSite = await siteInSuspected(currentSite);
+            safeSite = await siteInSafe(currentSite);
+            listsChecking = false;
+            processStatus(true, []);
+        }
+        else{
+            listsChecking = false;
+        }
     }
 
-    await sleep(5);
     //check site with virustotal
-    if(!warningSite && !safeSite){
-        chrome.storage.local.get("PDopenPageInfos", function(items){
-            var infoArray = items['PDopenPageInfos'];
-            infoArray = deleteCurrentSiteFromArray(infoArray);
-            if(infoArray.length> maxKnownPages){infoArray.pop()}
-            infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
-            chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
-        });
-        siteStatus = "unknown";
-        siteReason = "noScan";
-        
-        await getVirusTotalInfo(0);
-        await sleep(1000);
+    var toCheck = true;//while the checking from the other scripts is not done yet, looping until VTT can be checked
+    while(toCheck){
+        if(recentlyKnownPagesChecking || listsChecking){
+            await sleep(1000);
+        }
+        else{
+            if(!warningSite && !safeSite){
+                chrome.storage.local.get("PDopenPageInfos", function(items){
+                    var infoArray = items['PDopenPageInfos'];
+                    infoArray = deleteCurrentSiteFromArray(infoArray);
+                    if(infoArray.length> maxKnownPages){infoArray.pop()}
+                    infoArray = [[currentSiteShort, "unknown", "noScan"]].concat(infoArray);
+                    chrome.storage.local.set({'PDopenPageInfos': infoArray}, function() {});
+                });
+                siteStatus = "unknown";
+                siteReason = "noScan";
+                
+                await getVirusTotalInfo(0);
+                await sleep(1000);
+            }
+            toCheck = false;
+        }
     }
 
-    //for every password fiel insert the icon
+    //for every password field insert the icon
     var pwElems = document.querySelectorAll('input[type=password]');
     if(!pwElems.length == 0){
         inputPDIcon(pwElems);
     }
+
     checkUpload()
 }
 
@@ -128,7 +152,7 @@ function processStatus(writeStatus, VTTarray){
         chrome.runtime.sendMessage({VTTtoCheckURL: "safeSite"}, function(response) {});
     }
     if(warningSite){
-        console.log("warning site!");
+        console.log("PD: warning site!");
         chrome.storage.local.get("PDopenPageInfos", function(items){
             var infoArray = items['PDopenPageInfos'];
             if(infoArray.length> maxKnownPages){infoArray.pop()}
@@ -142,9 +166,8 @@ function processStatus(writeStatus, VTTarray){
         //Set Background color to red if enabled
         chrome.storage.local.get("PDsetBGColor", function(items){
             enabled = items['PDsetBGColor'];
-            console.log("color enabled: ", enabled);
             if(enabled){
-                console.log("BG set red");
+                console.log("PD: Background set red");
                 document.body.style.backgroundColor = 'red';
                 writeStats("BGColor set red");
             }
@@ -213,19 +236,19 @@ async function declareSites(){
 }
 
 async function getVirusTotalInfo(backoff) {
-    if(VTTattempts > 3){console.log('I gave up requesting the scan!'); return;}
+    if(VTTattempts > 3){console.log('PD: I gave up requesting the VTT scan!'); return;}
     VTTattempts += 1;
-    console.log("VTT initiated!");
+    console.log("PD: VTT initiated!");
     writeStats('VTTinitiated');
     await sleep(backoff * VTTattempts * VTTattempts);
     
     await chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
-        console.log(response.VTTresult);
+        //console.log(response.VTTresult);
         var resp = response;
 
         //if site was never scanned before, request a scan
         if( VTTattempts == 1 && 'error' in resp.VTTresult){
-            console.log("Not scanned before!");
+            console.log("PD:Page not scanned by VTT before!");
             var i = 0;
             chrome.runtime.sendMessage({VTTtoCheckURL: "VTTrequestScan"}, function(response) {
                 chrome.runtime.sendMessage({VTTtoCheckURL: "VTTcheck"}, function(response) {
@@ -244,12 +267,9 @@ async function getVirusTotalInfo(backoff) {
         totalVotes = virusScan.harmless + virusScan.malicious + virusScan.suspicious;
         positiveVotes = virusScan.harmless;
         negativeVotes = virusScan.malicious + virusScan.suspicious;
-/*      totalVotes = 100;
-        negativeVotes = 20;
-        positiveVotes = 10; */
         if(totalVotes > 10) {
             if(negativeVotes > 1){ //As on the blacklist some sites only have very few vendors who flag it as malicoius, but also safe sites have sometimes 1 detection
-                console.log("virus scan: warning");
+                console.log("PD: virus scan: warning");
                 warningSite = true;
                 safeSite = false;
             }
@@ -267,7 +287,7 @@ async function getVirusTotalInfo(backoff) {
 
 //Platziert das PD Icon neben allen übergebenen Feldern
 async function inputPDIcon(pwElems) {
-    console.log("current time - last injection: ", (Date.now() - lastWarning)/1000, "s");
+    //console.log("current time - last injection: ", (Date.now() - lastWarning)/1000, "s");
     if(safeSite && Date.now() > lastWarning + maxTimeWithoutWarning) {//If last warning was shown too long ago, the user shoud be tested again. Only on safe sites!!
         warningSite = true;
         safeSite = false;
@@ -276,8 +296,6 @@ async function inputPDIcon(pwElems) {
         chrome.runtime.sendMessage({VTTtoCheckURL: "warningSite"}, function(response) {});
     }
     for(let item of pwElems){
-        //change text of password field
-        //item.placeholder = texts.texts.placeholderPassword[language];
         //create item svg
         var newIcon = document.createElement('span');
         newIcon.className = "PDIcon";
@@ -309,7 +327,6 @@ async function inputPDIcon(pwElems) {
         iconAppended.addEventListener("mouseenter", async function(event) {
             if(!(container == undefined)){return;}
             container = buildInfoContainer(iconAppended);
-            //console.log("hover");
             iconAppended.classList.add('iconHovered');
             container.classList.add('hoverContainerOnHover');
             if(warningSite){
@@ -337,12 +354,10 @@ async function inputPDIcon(pwElems) {
             if(safeSite){injectionArray[1] = Date.now();}
             else if(warningSite){injectionArray[3] = Date.now();}
             else{injectionArray[2] = Date.now();}
-            /* console.log(injectionArray); */
             async function writeInjectionArray(injectionArray){
                 await sleep(1);//needed as otherwise an old instance is used :(
                 chrome.storage.local.set({'PDLastInjections': injectionArray}, function(items) {
                     chrome.storage.local.get({'PDLastInjections': injectionArray}, function(items) {
-                        /* console.log(items['PDLastInjections']) */
                     });
                 });
             }
@@ -392,7 +407,7 @@ function buildInfoContainer(iconAppended){
     return container;
 }
 
-//Schreibt die Texte je nach Fall aus der json in die HoverBox
+//writes the texts into the hoverbox
 function appendTexts(rating, reason){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     var justifyPhish = document.getElementsByClassName('justifyPhish')[0];
@@ -419,7 +434,7 @@ function appendLeaveButton(){
     container.appendChild(leaveButton);
 }
 
-//Erstellt alle Infos für den Fall einer Warnung
+//Creates all infos in case of a warning site
 function warning(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     if(realCase){siteInfoText.classList.add('siteInfotextWarning');}
@@ -428,53 +443,54 @@ function warning(){
     appendLeaveButton();
 }
 
-//Erstellt alle Infos für den Fall einer sicheren Seite
+//Creates all infos in case of a safe site
 function safe(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextSafe');
     appendTexts("safe", siteReason);
 }
 
-//Erstellt alle Infos für den Fall einer unbekannten Seite
+//Creates all infos in case of a unknown site
 function unknown(){
     var siteInfoText = document.getElementsByClassName('siteInfoText')[0];
     siteInfoText.classList.add('siteInfotextUnknown');
     appendTexts("unknown", siteReason);
 }
 
-//Checkt ob eine gegebene Seite in der Blacklist auftaucht
+//Checks if a given site is in the blacklist
 async function siteInSuspected(site){
     for(let warningSiteIndex in warningSites){
-        warningSite = warningSites[warningSiteIndex].url;
-        if (site.includes(warningSite)){
+        var currWarningSite = warningSites[warningSiteIndex].url;
+        if (site.includes(currWarningSite)){
             siteStatus = 'warning';
             siteReason = "blacklist";
-            console.log("Site\n" + site + "\n was suspected.");
+            console.log("PD: Site\n" + site + "\n was suspected (blacklist)");
             return true;
         }
     }
     return false;
 }
 
-//Checkt ob eine gegebene Seite in der Whitelist auftaucht
+//Checks if a given site is in the whitelist
 async function siteInSafe(site){
     for(let safeSiteIndex in safeSites){
-        safeSite = safeSites[safeSiteIndex].url;
-        if(site.includes(safeSite)){
+        var currSafeSite = safeSites[safeSiteIndex].url;
+        if(site.includes(currSafeSite)){
             siteStatus = 'safe';
             siteReason = "whitelist";
-            console.log("Site\n" + site + "\n was considered safe.");
-            
+            console.log("PD: Site\n" + site + "\n was considered safe (whitelist)");
             return true;
         }
     }
     return false;
 }
 
+//Catch the closing of a page for the stats
 window.addEventListener("beforeunload", function(){
     writeStats("windowUnload");
 });
 
+//Write statistics
 function writeStats(type) {
     chrome.storage.local.get('PDShareData', function(items) {
         if(items['PDShareData'] == false) return;
@@ -484,12 +500,13 @@ function writeStats(type) {
     });
 }
 
+//Checks when the last stats upload was performed and uploads the stats
 function checkUpload() {
     chrome.storage.local.get('PDShareData', function(items) {
         if(items['PDShareData'] == false){return;}
         else{
         chrome.storage.local.get('PDLastInjections', function(items){
-            function downloadStats() {
+            function uploadStats() {
                 filename = "PDStats";
                 statsArray = []
                 statsArrayString = "";
@@ -524,35 +541,26 @@ function checkUpload() {
                         
                         chrome.storage.local.get('PDIDNumberOfClient', function(items){
                             filename = 'PDStats_' + items['PDIDNumberOfClient'] + '_' + String(Date.now());
-                            
-                            //For direct download
-/*                             var element = document.createElement('a');
-                            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + statsArrayString);
-                            element.setAttribute('download', filename);
-                            element.style.display = 'none';
-                            document.body.appendChild(element);
-                            element.click();
-                            document.body.removeChild(element); */
-
-                            //For sending file to server
                             chrome.runtime.sendMessage({VTTtoCheckURL: "uploadStats", filename: filename, fileToUpload: statsArrayString}, function() {});
+                            console.log("PD: Stats upload started");
                         });
                     });
                 });
             
             }
             var lastUpload = items['PDLastInjections'][4];
-            console.log("Time since last Upload: ", (Date.now() - lastUpload)/1000, "s");
-            if(Date.now() > lastUpload + 100){ //upload every hour, therefore every 3600.000 ms
-                downloadStats();
-                waitAndupdateDownloadTime();
+            console.log("PD: Time since last Stats Upload: ", (Date.now() - lastUpload)/1000, "s");
+            if(Date.now() > lastUpload + uploadInterval){
+                uploadStats();
+                waitAndUpdateUploadTime();
             }
         });
         }
     });
 }
 
-async function waitAndupdateDownloadTime() {
+//Sets the Upload Time into the chrome storage
+async function waitAndUpdateUploadTime() {
     await sleep(1000);
     chrome.storage.local.get('PDLastInjections', function(items){
     var pdLastInjectionsUpdate = items['PDLastInjections'];
@@ -562,7 +570,7 @@ async function waitAndupdateDownloadTime() {
 }
 
 
-//Beinhaltet alle Texte der Extension auf Englisch und Deutsch
+//Contains all texts the user can see in English and German
 var texts = {
     "version": "1.0",
     "languages": {
@@ -695,10 +703,6 @@ var texts = {
                 "english": "bla",
                 "german" : "blaDeutsch"
             }
-        },
-        "placeholderPassword": {
-            "english": "Think twice before entering data!",
-            "german": "Denken Sie zweimal nach, bevor Sie Daten eingeben!"
         }
     }
 };

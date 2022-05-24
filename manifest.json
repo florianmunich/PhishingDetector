@@ -9,8 +9,8 @@
     "content_scripts":[
       {
         "matches": ["<all_urls>"],
-        "js": ["injectIconToPage.js"],
-        "css": ["injectIconToPage.css"]
+        "js": ["PDMainScript.js"],
+        "css": ["PDMainScript.css"]
       }
     ],
     "permissions": ["activeTab", "background", "scripting", "storage", "tabs", "unlimitedStorage"],
