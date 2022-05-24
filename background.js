@@ -10,10 +10,12 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log(d, "Plugin up and running");
 });
 
-//debugging test
-chrome.storage.local.set({"PDProlificID": ""}, function() {});
-
 //set default settings
+chrome.storage.local.get('PDProlificID', function(items){
+  if(items['PDProlificID'] == undefined){
+    chrome.storage.local.set({'PDProlificID': ""}, function() {});
+  }
+});
 chrome.storage.local.get('PDIDNumberOfClient', function(items){
   if(items['PDIDNumberOfClient'] == undefined){
     chrome.storage.local.set({'PDIDNumberOfClient': PDID}, function() {});
@@ -155,15 +157,14 @@ chrome.runtime.onMessage.addListener(
       filename = request.filename;
       fileToUpload = request.fileToUpload;
       
-      fetch('https://study2.usec.code.unibw-muenchen.de/', {
-        //fetch('http://localhost:8000/uploadFile', {
+      fetch('https://study2.usec.code.unibw-muenchen.de/uploadFile', {
+      //fetch('http://localhost:8000/uploadFile', {
         method: 'POST',
         headers: {filename: filename},
         body: fileToUpload
       })
       .then(response => console.log(response))
       .catch(err => console.log(err));
-      
     }
 
     return true;
@@ -184,5 +185,5 @@ async function writeStats(type, tabID, tabURL) {
 }
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-  writeStats("tabChange", activeInfo.tabId, "notKnown");
+  writeStats("tabChange", activeInfo.tabId, "//notKnown");
 });
