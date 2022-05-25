@@ -50,7 +50,7 @@ chrome.storage.local.get("PDLastInjections", function (items) {
                     installationTime,
                     installationTime,
                     installationTime,
-                    installationTime,
+                    0,
                 ],
             },
             function () {}
