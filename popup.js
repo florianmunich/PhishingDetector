@@ -108,10 +108,6 @@ async function handleStatsSharing(currentSettingStatus) {
 //Only needed for the Prolific Study
 function checkAndSetProlificID() {
     chrome.storage.local.get("PDProlificID", function (items) {
-        /*console.log(items["PDProlificID"]);
-    chrome.storage.local.get('PDIDNumberOfClient', function(items){
-      console.log(items["PDIDNumberOfClient"]);
-    }); */
         if (items["PDProlificID"] == undefined || items["PDProlificID"] == "") {
             var prolificID = "";
             while (
@@ -132,6 +128,13 @@ function checkAndSetProlificID() {
                     { PDIDNumberOfClient: prolificID },
                     function () {}
                 );
+                chrome.storage.local.get("PDProlificStudyCompleted", function (items) {
+                    console.log(items["PDProlificStudyCompleted"]);
+                    if (items["PDProlificStudyCompleted"] == false) {
+                        window.alert("If you are recruited by Prolific: The Prolific completion code is PD22LMU\nCopy and paste it into the Google Forms.")
+                        chrome.storage.local.set({ PDProlificStudyCompleted: "true" }, function () {});
+                    }
+                });
             }
         }
     });
@@ -178,19 +181,7 @@ async function init() {
             window.alert(texts.texts.prolific.reset[language]);
             document.location.reload();
         }
-        chrome.storage.local.get("PDProlificStudyCompleted", function (items) {
-            console.log(items["PDProlificStudyCompleted"]);
-            if (items["PDProlificStudyCompleted"] == false) {
-                var finishProlificStudyButton = prolificID.appendChild(
-                    createElementWithClass("button", "finishStudy")
-                );
-                var fPSBURL = finishProlificStudyButton.appendChild(createElementWithClass("a", "finishStudyURL"));
-                fPSBURL.innerHTML = "Finish Study";
-                fPSBURL.setAttribute("href", "https://app.prolific.co/submissions/complete?cc=3ACCCD37");
-                fPSBURL.setAttribute("target", "_blank");
-                chrome.storage.local.set({ PDProlificStudyCompleted: "true" }, function () {});
-            }
-        });
+        
         
     });
 
