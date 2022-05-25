@@ -768,45 +768,45 @@ var texts = {
                 warning: {
                     blacklist: {
                         english:
-                            "Reason: We found the web page in a blacklist of phishing sites!",
-                        german: "Grund: Wir haben die Seite in einer schwarzen Liste für Phishing Seiten gefunden!",
+                            "Reason: PhishingDetector found the web page in a blacklist of phishing sites!",
+                        german: "Grund: PhishingDetector hat die Seite in einer schwarzen Liste für Phishing Seiten gefunden!",
                     },
                     VTTScan: {
                         english:
-                            "Reason: We ran a virus scan of this page! You can access the result in the popup.",
-                        german: "Grund: Wir haben einen Virenscan dieser Webseite gemacht! Sie können das Ergebnis im Popup einsehen.",
+                            "Reason: PhishingDetector ran a virus scan of this page! You can access the result in the popup.",
+                        german: "Grund: PhishingDetector hat einen Virenscan dieser Webseite gemacht! Sie können das Ergebnis im Popup einsehen.",
                     },
                     activationTest: {
                         english:
-                            "We only tested your attention (1 time per 3 days). Good job!",
-                        german: "Wir haben nur Ihre Aufmerksamkeit getestet (1 mal pro 3 Tagen). Gute Arbeit!",
+                            "PhishingDetector only tested your attention (1 time per 3 days). Good job!",
+                        german: "PhishingDetector hat nur Ihre Aufmerksamkeit getestet (1 mal pro 3 Tagen). Gute Arbeit!",
                     },
                 },
                 safe: {
                     whitelist: {
-                        english: "Reason: We found the site our database.",
-                        german: "Grund: Wir haben die Seite in unserer Datenbank gefunden.",
+                        english: "Reason: PhishingDetector found the site the database.",
+                        german: "Grund: PhishingDetector die Seite in der Datenbank gefunden.",
                     },
                     VTTScan: {
-                        english: "Reason: We ran a virus scan of this page!",
-                        german: "Grund: Wir haben einen Virenscan dieser Webseite gemacht!",
+                        english: "Reason: PhishingDetector ran a virus scan of this page!",
+                        german: "Grund: PhishingDetector hat einen Virenscan dieser Webseite gemacht!",
                     },
                     userOverwrite: {
                         english:
-                            " was detected as fradulent by us, but you marked it as safe.",
-                        german: "wurde von uns als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert.",
+                            " was detected as fradulent by PhishingDetector, but you marked it as safe.",
+                        german: "wurde von PhishingDetector als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert.",
                     },
                 },
                 unknown: {
                     noData: {
                         english:
-                            "Reason: We could not find the site in our databases.",
-                        german: "Grund: Wir konnten die Seite nicht in unseren Datenbanken finden.",
+                            "Reason: PhishingDetector could not find the site in the databases.",
+                        german: "Grund: PhishingDetector konnten die Seite nicht in den Datenbanken finden.",
                     },
                     noScan: {
                         english:
-                            "Reason: The site is not in our databases and no virus scan was performed so far.",
-                        german: "Grund: Die Seite ist nicht in unseren Datenbanken und es sie wurde bisher nicht gescannt.",
+                            "Reason: The site is not in PhishingDetector's databases and no virus scan was performed so far.",
+                        german: "Grund: Die Seite ist nicht in den Datenbanken von PhishingDetector und es sie wurde bisher nicht gescannt.",
                     },
                 },
             },
