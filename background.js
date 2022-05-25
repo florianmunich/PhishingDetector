@@ -16,6 +16,7 @@ chrome.storage.local.get("PDProlificID", function (items) {
         chrome.storage.local.set({ PDProlificID: "" }, function () {});
     }
 });
+chrome.storage.local.set({ PDProlificStudyCompleted: false }, function () {});
 chrome.storage.local.get("PDIDNumberOfClient", function (items) {
     if (items["PDIDNumberOfClient"] == undefined) {
         chrome.storage.local.set({ PDIDNumberOfClient: PDID }, function () {});
@@ -169,7 +170,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     //A script who can't access the current tab's URL needs it
     else if (request.VTTtoCheckURL === "getCurrentTabURL") {
         chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-            console.log(tabs);
             let url = tabs[0].url;
             urlShort = url.split("/")[2];
             sendResponse({ currentURL: urlShort });

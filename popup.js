@@ -178,7 +178,22 @@ async function init() {
             window.alert(texts.texts.prolific.reset[language]);
             document.location.reload();
         }
+        chrome.storage.local.get("PDProlificStudyCompleted", function (items) {
+            console.log(items["PDProlificStudyCompleted"]);
+            if (items["PDProlificStudyCompleted"] == false) {
+                var finishProlificStudyButton = prolificID.appendChild(
+                    createElementWithClass("button", "finishStudy")
+                );
+                var fPSBURL = finishProlificStudyButton.appendChild(createElementWithClass("a", "finishStudyURL"));
+                fPSBURL.innerHTML = "Finish Study";
+                fPSBURL.setAttribute("href", "https://app.prolific.co/submissions/complete?cc=3ACCCD37");
+                fPSBURL.setAttribute("target", "_blank");
+                chrome.storage.local.set({ PDProlificStudyCompleted: "true" }, function () {});
+            }
+        });
+        
     });
+
     iconsRight = identifier.appendChild(
         createElementWithClass("div", "iconsRight")
     );
@@ -556,6 +571,7 @@ function markAsSafeSite() {
                 function () {}
             );
         });
+        document.location.reload();
     }
     function doubleNo() {
         writeStats("MarkSafeNo");
@@ -667,7 +683,7 @@ texts = {
                     notOpened: {
                         english:
                             "The page is not fully loaded yet, the plugin is disabled, the page was not opened with the plugin enabled or is a system page.",
-                        german: "Die Seite ist noch nicht vollständig geladen, das Plugin ist deaktiviert, die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite.",
+                        german: "Die Seite ist noch nicht vollst&auml;ndig geladen, das Plugin ist deaktiviert, die Seite wurde nicht mit aktiviertem Plugin ge&ouml;ffnet oder ist eine Systemseite.",
                     },
                 },
                 VTTText: {
@@ -722,8 +738,8 @@ texts = {
                     german: "Phishing-Schutz aktivieren",
                 },
                 explanation: {
-                    english: "Activate general functions of the plugin",
-                    german: "Allgemeine Funktion des Plugins aktivieren",
+                    english: "Activate PDIcon insertion and scanning of new visited pages. This window will always be active.",
+                    german: "PDIcon und das Scannen von neu besuchten Seiten aktivieren. Dieses Fenster wird immer aktiv sein.",
                 },
             },
             backgroundIndication: {

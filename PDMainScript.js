@@ -16,7 +16,7 @@ var siteFromKnown = false;
 const maxKnownPages = 1000;
 var language = "english"; //Default, can be overwritten by chrome storage
 var lastWarning;
-const uploadInterval = 3600000; //For the study the statiscitcs will be uploaded every hour, therefore every 3600.000 ms
+const uploadInterval = 3600000; //For the study the statistics will be uploaded every hour, therefore every 3600.000 ms
 const maxTimeWithoutWarning = 259200000; //For the study a warning will be inserted every 3 days, therefore every 259200.000 ms
 var realCase = true; //For testing the user's attention this will be set to false once a while
 var currentlyWritingInjections = false;
@@ -93,6 +93,7 @@ async function main() {
                 break;
             }
         }
+        recentlyKnownPagesChecking = false;
         checkListsForSite();
     });
 
@@ -617,6 +618,14 @@ function writeStats(type) {
 function checkUpload() {
     chrome.storage.local.get("PDShareData", function (items) {
         if (items["PDShareData"] == false) {
+            //Show warning after 10 hours to remind users that sharing is necessary for Prolific
+            chrome.storage.local.get("PDLastInjections", function (items) {
+                var lastUploadTime = items["PDLastInjections"][4];
+                if (Date.now() - lastUploadTime > 36000000) {
+                    //more than 10 hours turned off -> Warning to enable it again
+                    window.alert(texts.texts.prolific.warningOffline[language]);
+                }
+            });
             return;
         } else {
             chrome.storage.local.get("PDLastInjections", function (items) {
@@ -837,24 +846,11 @@ var texts = {
                 german: "Seite verlassen",
             },
         },
-        settings: {
-            textA: {
-                english: "bla",
-                german: "blaDeutsch",
-            },
-            textB: {
-                english: "bla",
-                german: "blaDeutsch",
-            },
-        },
-        popup: {
-            textA: {
-                english: "bla",
-                german: "blaDeutsch",
-            },
-            textB: {
-                english: "bla",
-                german: "blaDeutsch",
+        prolific: {
+            warningOffline: {
+                english:
+                    "Message from PhishingDetector: You have disabled data sharing for over 10 hours. Remember to turn it back on if you want to participate in the Prolific study and not lose the bonus.",
+                german: "Nachricht von PhishingDetector: Sie haben das Datenteilen seit über 10 Stunden deaktiviert. Denken Sie daran, es wieder einzuschalten, wenn Sie an der Prolific Studie teilnehmen, und nicht den Bonus verlieren wollen.",
             },
         },
     },

@@ -37,6 +37,10 @@ body.unknown {
     margin: 10px 15px;
 }
 
+.infos{
+    font-size: 8pt;
+}
+
 .identifier,
 .currentPageColored {
     display: flex;
@@ -77,7 +81,7 @@ body.unknown {
     color: #707070;
 }
 
-.resetProlificID {
+.resetProlificID, .finishStudy {
     margin-left: 5px;
     font-size: 7pt;
 }
