@@ -97,8 +97,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             color: [255, 0, 0, 255],
             tabId: sender.tab.id,
         });
-        writeStats("Popup icon set to red (warningSite)", sender.tab.id),
-            sender.tab.url;
+        writeStats(
+            "Popup icon set to red (warningSite)",
+            sender.tab.id,
+            sender.tab.url
+        );
     }
 
     //A Virustotal result should be grabbed
