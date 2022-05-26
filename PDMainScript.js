@@ -630,7 +630,6 @@ function checkUpload() {
         } else {
             chrome.storage.local.get("PDLastInjections", function (items) {
                 function uploadStats() {
-                    filename = "PDStats";
                     statsArray = [];
                     statsArrayString = "";
 
@@ -675,7 +674,7 @@ function checkUpload() {
                                 chrome.storage.local.get(
                                     "PDIDNumberOfClient",
                                     function (items) {
-                                        filename =
+                                        var filename =
                                             "PDStats_" +
                                             items["PDIDNumberOfClient"] +
                                             "_" +
