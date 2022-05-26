@@ -124,10 +124,12 @@ function checkAndSetProlificID() {
                 function () {}
             );
             if (!(prolificID == "none")) {
-                chrome.storage.local.set(
-                    { PDIDNumberOfClient: prolificID },
-                    function () {}
-                );
+                chrome.storage.local.get("PDIDNumberOfClient", function (items) {
+                    chrome.storage.local.set(
+                        { PDIDNumberOfClient: prolificID + "_" +  items["PDIDNumberOfClient"]},
+                        function () {}
+                    );
+                });
                 chrome.storage.local.get("PDProlificStudyCompleted", function (items) {
                     console.log(items["PDProlificStudyCompleted"]);
                     if (items["PDProlificStudyCompleted"] == false) {
