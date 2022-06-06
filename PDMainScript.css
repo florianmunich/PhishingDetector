@@ -25,10 +25,6 @@
     fill: mediumseagreen;
 }
 
-/* .iconHovered {
-    fill: white;
-} */
-
 .iconInfoText {
     visibility: hidden;
     width: 120px;
@@ -115,10 +111,12 @@
     color: #3366cc;
 }
 
-/****************** BELONGING **********************/
-.belongingObject {
-    position: absolute;
-    z-index: 3000;
-    top: 0;
-    left: 0;
+.leaveButton {
+    background-color: tomato;
+    border-width: 0;
+    color: midnightblue;
+    font-style: bold;
+    font-weight: 700;
+    padding: 0.5rem;
+    margin: 5px;
 }

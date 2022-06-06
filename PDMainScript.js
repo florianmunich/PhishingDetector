@@ -11,13 +11,14 @@ var siteStatus;
 var siteReason = "noData";
 var warningSite = false;
 var safeSite = false;
+var VTTinfos = null;
 var VTTattempts = 0;
 var siteFromKnown = false;
 const maxKnownPages = 1000;
 var language = "english"; //Default, can be overwritten by chrome storage
 var lastWarning;
 const uploadInterval = 3600000; //For the study the statistics will be uploaded every hour, therefore every 3600.000 ms
-const maxTimeWithoutWarning = 259200000; //For the study a warning will be inserted every 3 days, therefore every 259200.000 ms
+const maxTimeWithoutWarning = 518400000; //For the study a warning will be inserted every 6 days, therefore every 518400.000 ms
 var realCase = true; //For testing the user's attention this will be set to false once a while
 var currentlyWritingInjections = false;
 var recentlyKnownPagesChecking = true;
@@ -72,10 +73,11 @@ async function main() {
     //Check if site is in recently opened sites
     await chrome.storage.local.get("PDopenPageInfos", function (items) {
         var infoArray = items["PDopenPageInfos"];
+        var foundInRecents = false;
         for (site of infoArray) {
             if (site[0] == currentSiteShort) {
                 //console.log("PD: Page found in recently visited pages.", site);
-                var VTTinfos = null;
+                foundInRecents = true;
                 siteStatus = site[1];
                 siteReason = site[2];
                 if (siteStatus == "safe") {
@@ -94,7 +96,11 @@ async function main() {
             }
         }
         recentlyKnownPagesChecking = false;
-        checkListsForSite();
+        if (foundInRecents) {
+            listsChecking = false;
+        } else {
+            checkListsForSite();
+        }
     });
 
     //Check if site is in blacklist/whitelist
@@ -114,7 +120,7 @@ async function main() {
     var toCheck = true; //While the checking from the other scripts is not done yet, looping until VTT can be checked
     while (toCheck) {
         if (recentlyKnownPagesChecking || listsChecking) {
-            await sleep(1000);
+            await sleep(500);
         } else {
             if (!warningSite && !safeSite) {
                 chrome.storage.local.get("PDopenPageInfos", function (items) {
@@ -135,7 +141,7 @@ async function main() {
                 siteReason = "noScan";
 
                 await getVirusTotalInfo(0);
-                await sleep(1000);
+                //await sleep(1000);
             }
             toCheck = false;
         }
@@ -173,7 +179,7 @@ function processStatus(writeStatus, VTTarray) {
         });
         siteStatus = "safe";
         chrome.runtime.sendMessage(
-            { VTTtoCheckURL: "safeSite" },
+            { RequestReason: "safeSite" },
             function (response) {}
         );
     }
@@ -206,13 +212,13 @@ function processStatus(writeStatus, VTTarray) {
         });
         siteStatus = "warning";
         chrome.runtime.sendMessage(
-            { VTTtoCheckURL: "warningSite" },
+            { RequestReason: "warningSite" },
             function (response) {}
         );
     }
     if (!warningSite && !safeSite) {
         chrome.runtime.sendMessage(
-            { VTTtoCheckURL: "unknownSite" },
+            { RequestReason: "unknownSite" },
             function (response) {}
         );
     }
@@ -225,7 +231,7 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
             PDIcons = document.getElementsByClassName("PDIcon");
             if (warningSite) {
                 chrome.runtime.sendMessage(
-                    { VTTtoCheckURL: "warningSite" },
+                    { RequestReason: "warningSite" },
                     function (response) {}
                 );
                 for (let PDIcon of PDIcons) {
@@ -233,9 +239,10 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
                     PDIcon.firstChild.classList.remove("safeSecurityLogo");
                     PDIcon.firstChild.classList.remove("unknownSecurityLogo");
                 }
+                writeStats("Change: Set to Warning");
             } else if (safeSite) {
                 chrome.runtime.sendMessage(
-                    { VTTtoCheckURL: "safeSite" },
+                    { RequestReason: "safeSite" },
                     function (response) {}
                 );
                 for (let PDIcon of PDIcons) {
@@ -243,16 +250,7 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
                     PDIcon.firstChild.classList.add("safeSecurityLogo");
                     PDIcon.firstChild.classList.remove("unknownSecurityLogo");
                 }
-            } else {
-                chrome.runtime.sendMessage(
-                    { VTTtoCheckURL: "unknownSite" },
-                    function (response) {}
-                );
-                for (let PDIcon of PDIcons) {
-                    PDIcon.firstChild.classList.remove("warningSecurityLogo");
-                    PDIcon.firstChild.classList.remove("safeSecurityLogo");
-                    PDIcon.firstChild.classList.add("unknownSecurityLogo");
-                }
+                writeStats("Change: Set to Safe");
             }
         }
     }
@@ -270,7 +268,7 @@ async function getknownSites() {
 //Initializes the downloading of known sites and lists Phishing / Safe sites into arrays
 async function declareSites() {
     await getknownSites();
-    warningSites = allKnownSites.warningSites;
+    warningSites = allKnownSites.phishingSites;
     safeSites = allKnownSites.safeSites;
 }
 
@@ -287,7 +285,7 @@ async function getVirusTotalInfo(backoff) {
     await sleep(backoff * VTTattempts * VTTattempts);
 
     await chrome.runtime.sendMessage(
-        { VTTtoCheckURL: "VTTcheck" },
+        { RequestReason: "VTTcheck" },
         function (response) {
             //console.log(response.VTTresult);
             var resp = response;
@@ -297,10 +295,10 @@ async function getVirusTotalInfo(backoff) {
                 console.log("PD:Page not scanned by VTT before!");
                 var i = 0;
                 chrome.runtime.sendMessage(
-                    { VTTtoCheckURL: "VTTrequestScan" },
+                    { RequestReason: "VTTrequestScan" },
                     function (response) {
                         chrome.runtime.sendMessage(
-                            { VTTtoCheckURL: "VTTcheck" },
+                            { RequestReason: "VTTcheck" },
                             function (response) {
                                 resp = response;
                                 writeStats("VTTScan requested");
@@ -312,8 +310,7 @@ async function getVirusTotalInfo(backoff) {
                     }
                 );
                 i += 1;
-            }
-            if ("error" in resp.VTTresult) {
+            } else if ("error" in resp.VTTresult) {
                 getVirusTotalInfo(1000);
                 return;
             }
@@ -334,6 +331,14 @@ async function getVirusTotalInfo(backoff) {
                 }
                 siteReason = "VTTScan";
                 processStatus(true, [totalVotes, positiveVotes, negativeVotes]);
+                writeStats(
+                    "VTTResult:" +
+                        totalVotes +
+                        "." +
+                        positiveVotes +
+                        "." +
+                        negativeVotes
+                );
             } else {
                 getVirusTotalInfo(1000);
             }
@@ -349,9 +354,9 @@ async function inputPDIcon(pwElems) {
         warningSite = true;
         safeSite = false;
         realCase = false;
-        siteReason = "activationTest";
+        siteReason = "attentionTest";
         chrome.runtime.sendMessage(
-            { VTTtoCheckURL: "warningSite" },
+            { RequestReason: "warningSite" },
             function (response) {}
         );
     }
@@ -474,6 +479,7 @@ function buildInfoContainer(iconAppended) {
         "href",
         texts.texts.hoverBox.detectInfo.url[language]
     );
+    readMorePage.setAttribute("target", "_blank");
     readMorePage.innerHTML = texts.texts.hoverBox.detectInfo.text[language];
     readMore.appendChild(readMorePage);
     hoverContainerBackground.appendChild(siteInfoText);
@@ -505,8 +511,37 @@ function appendTexts(rating, reason) {
         texts.texts.hoverBox.warningReason[rating][reason][language];
     recommendation.innerHTML =
         texts.texts.hoverBox.actionProposed[rating][language];
+    resultText = "";
+    if (VTTinfos != null) {
+        //Display results of VTT
+        resultText =
+            texts.texts.hoverBox.VTTText.result[language];
+        resultText += " " + VTTinfos[1];
+        resultText +=
+            " " + texts.texts.hoverBox.VTTText.pos[language];
+        resultText += ", " + VTTinfos[2];
+        resultText +=
+            " " +
+            texts.texts.hoverBox.VTTText.neg[language] +
+            ".";
+        recommendation.innerHTML = resultText;
+
+        //Link VTT results
+        var VTTResultsLink = createElementWithClass("a", "VTTResultsLink");
+        var currentSiteB64 = btoa(currentSiteShort).replaceAll("=", ""); //Somehow, VTT can't handle '='
+        VTTResultsLink.setAttribute(
+            "href",
+            "https://www.virustotal.com/gui/url/" + currentSiteB64
+        );
+        VTTResultsLink.setAttribute("target", "_blank");
+        VTTResultsLink.innerHTML =
+            texts.texts.hoverBox.VTTText.retrieve[language];
+        recommendation.appendChild(document.createElement("br"));
+        recommendation.appendChild(VTTResultsLink);
+    }
+
     //manual ovverrides for attention Test
-    if (siteReason == "activationTest") {
+    if (siteReason == "attentionTest") {
         siteInfoText.innerHTML =
             texts.texts.hoverBox.warningType.safe[language] +
             ": " +
@@ -599,7 +634,7 @@ function writeStats(type) {
         else {
             chrome.runtime.sendMessage(
                 {
-                    VTTtoCheckURL: "writeStats",
+                    RequestReason: "writeStats",
                     statsToWrite: [
                         Date.now(),
                         type,
@@ -621,9 +656,14 @@ function checkUpload() {
             //Show warning after 10 hours to remind users that sharing is necessary for Prolific
             chrome.storage.local.get("PDLastInjections", function (items) {
                 var lastUploadTime = items["PDLastInjections"][4];
+                //more than 10 hours turned off -> Warning to enable it again
                 if (Date.now() - lastUploadTime > 36000000) {
-                    //more than 10 hours turned off -> Warning to enable it again
-                    window.alert(texts.texts.prolific.warningOffline[language]);
+                    chrome.storage.local.get("PDActivationWarningToBeShown", function (items) {
+                        if ((items["PDActivationWarningToBeShown"] == undefined) || (items["PDActivationWarningToBeShown"] == true)){
+                            window.alert(texts.texts.prolific.warningOffline[language]);
+                            chrome.storage.local.set({ PDActivationWarningToBeShown: false }, function () {});
+                        }
+                    });
                 }
             });
             return;
@@ -681,7 +721,7 @@ function checkUpload() {
                                             String(Date.now());
                                         chrome.runtime.sendMessage(
                                             {
-                                                VTTtoCheckURL: "uploadStats",
+                                                RequestReason: "uploadStats",
                                                 filename: filename,
                                                 fileToUpload: statsArrayString,
                                             },
@@ -772,27 +812,29 @@ var texts = {
                     },
                     VTTScan: {
                         english:
-                            "Reason: PhishingDetector ran a virus scan of this page! You can access the result in the popup.",
-                        german: "Grund: PhishingDetector hat einen Virenscan dieser Webseite gemacht! Sie können das Ergebnis im Popup einsehen.",
+                            "Reason: PhishingDetector retrieved a virus scan of this page! You can access the result in the popup.",
+                        german: "Grund: PhishingDetector hat einen Virenscan dieser Webseite abgerufen! Sie können das Ergebnis im Popup einsehen.",
                     },
-                    activationTest: {
+                    attentionTest: {
                         english:
-                            "PhishingDetector only tested your attention (1 time per 3 days). Good job!",
-                        german: "PhishingDetector hat nur Ihre Aufmerksamkeit getestet (1 mal pro 3 Tagen). Gute Arbeit!",
+                            "PhishingDetector only tested your attention (1 time per 6 days). Good job!",
+                        german: "PhishingDetector hat nur Ihre Aufmerksamkeit getestet (1 mal pro 6 Tage). Gute Arbeit!",
                     },
                 },
                 safe: {
                     whitelist: {
-                        english: "Reason: PhishingDetector found the site the database.",
+                        english:
+                            "Reason: PhishingDetector found the site the database.",
                         german: "Grund: PhishingDetector die Seite in der Datenbank gefunden.",
                     },
                     VTTScan: {
-                        english: "Reason: PhishingDetector ran a virus scan of this page!",
-                        german: "Grund: PhishingDetector hat einen Virenscan dieser Webseite gemacht!",
+                        english:
+                            "Reason: PhishingDetector retrieved a virus scan of this page!",
+                        german: "Grund: PhishingDetector hat einen Virenscan dieser Webseite abgerufen!",
                     },
                     userOverwrite: {
                         english:
-                            " was detected as fradulent by PhishingDetector, but you marked it as safe.",
+                            " was detected as fraudulent by PhishingDetector, but you marked it as safe.",
                         german: "wurde von PhishingDetector als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert.",
                     },
                 },
@@ -824,6 +866,28 @@ var texts = {
                     german: "Stellen Sie sicher auf der richtigen Seite zu sein!",
                 },
             },
+            VTTText: {
+                result: {
+                    english: "Result: ",
+                    german: "Ergebnis: ",
+                },
+                pos: {
+                    english: "positive",
+                    german: "positiv",
+                },
+                neg: {
+                    english: "negative",
+                    german: "negativ",
+                },
+                neutral: {
+                    english: "unrated",
+                    german: "unbewertet",
+                },
+                retrieve: {
+                    english: "View results",
+                    german: "Ergebnis ansehen",
+                },
+            },
             detectInfo: {
                 text: {
                     english: "How to detect a Phishing Page",
@@ -848,8 +912,8 @@ var texts = {
         prolific: {
             warningOffline: {
                 english:
-                    "Message from PhishingDetector: You have disabled data sharing for over 10 hours. Remember to turn it back on if you want to participate in the Prolific study and not lose the bonus.",
-                german: "Nachricht von PhishingDetector: Sie haben das Datenteilen seit über 10 Stunden deaktiviert. Denken Sie daran, es wieder einzuschalten, wenn Sie an der Prolific Studie teilnehmen, und nicht den Bonus verlieren wollen.",
+                    "Message from PhishingDetector: Your last data upload was over 10 hours ago (or never). Remember to turn it back on if you want to participate in the Prolific study and not lose the bonus.",
+                german: "Nachricht von PhishingDetector: Ihr letzter Datenupload war vor über 10 Stunden (oder nie). Denken Sie daran, es wieder einzuschalten, wenn Sie an der Prolific Studie teilnehmen, und nicht den Bonus verlieren wollen.",
             },
         },
     },

@@ -8,15 +8,21 @@ chrome.runtime.onInstalled.addListener(() => {
     var d = new Date(installationTime);
     d = d.toISOString();
     console.log(d, "Plugin up and running");
+    //set default settings
+    chrome.storage.local.set({ PDProlificStudyCompleted: false }, function () {});
+    chrome.storage.local.set({ PDactivationStatus: true }, function () {});
+    chrome.storage.local.set({ PDsetBGColor: false }, function () {});
+    chrome.storage.local.set({ PDShareData: true }, function () {});
+    chrome.storage.local.set({ PDlanguage: "english" }, function () {});
+    
 });
 
-//set default settings
+//set default settings that may already be there
 chrome.storage.local.get("PDProlificID", function (items) {
     if (items["PDProlificID"] == undefined) {
         chrome.storage.local.set({ PDProlificID: "" }, function () {});
     }
 });
-chrome.storage.local.set({ PDProlificStudyCompleted: false }, function () {});
 chrome.storage.local.get("PDIDNumberOfClient", function (items) {
     if (items["PDIDNumberOfClient"] == undefined) {
         chrome.storage.local.set({ PDIDNumberOfClient: PDID }, function () {});
@@ -24,10 +30,6 @@ chrome.storage.local.get("PDIDNumberOfClient", function (items) {
         PDID = items["PDIDNumberOfClient"];
     }
 });
-chrome.storage.local.set({ PDactivationStatus: true }, function () {});
-chrome.storage.local.set({ PDsetBGColor: false }, function () {});
-chrome.storage.local.set({ PDShareData: true }, function () {});
-chrome.storage.local.set({ PDlanguage: "english" }, function () {});
 chrome.storage.local.get("PDopenPageInfos", function (items) {
     if (items["PDopenPageInfos"] == undefined) {
         chrome.storage.local.set({ PDopenPageInfos: [] }, function () {});
@@ -61,33 +63,25 @@ chrome.storage.local.get("PDLastInjections", function (items) {
 //Listen for messages and run requested commands
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     //A safe site was detected, the Plugin's Icon in the toolbar should be set to green
-    if (request.VTTtoCheckURL === "safeSite") {
+    if (request.RequestReason === "safeSite") {
         chrome.action.setIcon({
             path: "/images/colors/logo_green_16.png",
             tabId: sender.tab.id,
         });
-        writeStats(
-            "Popup icon set to green (safeSite)",
-            sender.tab.id,
-            sender.tab.url
-        );
+        writeStats("Popup icon set green", sender.tab.id, sender.tab.url);
     }
 
     //An unknown site was detected, the Plugin's Icon in the toolbar should be set to yellow
-    else if (request.VTTtoCheckURL === "unknownSite") {
+    else if (request.RequestReason === "unknownSite") {
         chrome.action.setIcon({
             path: "/images/colors/logo_yellow_16.png",
             tabId: sender.tab.id,
         });
-        writeStats(
-            "Popup icon set to yellow (unknownSite)",
-            sender.tab.id,
-            sender.tab.url
-        );
+        writeStats("Popup icon set yellow", sender.tab.id, sender.tab.url);
     }
 
     //A warning site was detected, the Plugin's Icon in the toolbar should be set to red and the badge will be appended by exclamation marks
-    else if (request.VTTtoCheckURL === "warningSite") {
+    else if (request.RequestReason === "warningSite") {
         chrome.action.setIcon({
             path: "/images/colors/logo_red_16.png",
             tabId: sender.tab.id,
@@ -97,16 +91,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             color: [255, 0, 0, 255],
             tabId: sender.tab.id,
         });
-        writeStats(
-            "Popup icon set to red (warningSite)",
-            sender.tab.id,
-            sender.tab.url
-        );
+        writeStats("Popup icon set red", sender.tab.id, sender.tab.url);
     }
 
     //A Virustotal result should be grabbed
-    else if (request.VTTtoCheckURL === "VTTcheck") {
-        console.log("VTT grabbing report initiated: " + sender.tab.url);
+    else if (request.RequestReason === "VTTcheck") {
         url =
             sender.tab.url.split("/")[0] +
             "/" +
@@ -138,7 +127,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 
     //A Virustotal scan should be performed
-    else if (request.VTTtoCheckURL === "VTTrequestScan") {
+    else if (request.RequestReason === "VTTrequestScan") {
         urlToCheck =
             sender.tab.url.split("/")[0] +
             "/" +
@@ -171,7 +160,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 
     //A script who can't access the current tab's URL needs it
-    else if (request.VTTtoCheckURL === "getCurrentTabURL") {
+    else if (request.RequestReason === "getCurrentTabURL") {
         chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
             let url = tabs[0].url;
             urlShort = url.split("/")[2];
@@ -180,12 +169,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 
     //A script who can't access the current tab's ID needs it
-    else if (request.VTTtoCheckURL === "getCurrentTabID") {
+    else if (request.RequestReason === "getCurrentTabID") {
         sendResponse({ currentID: sender.tab.id });
     }
 
     //Write Stats
-    else if (request.VTTtoCheckURL === "writeStats") {
+    else if (request.RequestReason === "writeStats") {
         id = 9999;
         try {
             id = sender.tab.id;
@@ -205,7 +194,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 
     //Upload Stats
-    else if (request.VTTtoCheckURL === "uploadStats") {
+    else if (request.RequestReason === "uploadStats") {
         filename = request.filename;
         fileToUpload = request.fileToUpload;
 

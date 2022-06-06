@@ -31,9 +31,9 @@ async function handleSettingClick(event) {
     if (event.path[0].className == "switchInput") {
         return;
     }
-    let activeSwitch = event.target.parentElement.querySelector(
+    /*     let activeSwitch = event.target.parentElement.querySelector(
         `.${"switchInput"}`
-    );
+    ); */
     let setting = event.target.parentElement.parentElement.id;
     var currentSettingStatus;
     await chrome.storage.local.get(setting, function (items) {
@@ -67,6 +67,8 @@ async function handleSettingClick(event) {
         //Color the options in grey if they are disabled
         BGButton.firstChild.firstChild.classList.toggle("notApplicable");
         BEButton.firstChild.firstChild.classList.toggle("notApplicable");
+        
+        chrome.storage.local.set({ PDActivationWarningToBeShown: "true" }, function () {});
 
         writeStats("PDactivationStatus set to " + currentSettingStatus);
     } else {
@@ -81,6 +83,7 @@ async function handleSettingClick(event) {
                     );
                     writeStats("PDsetBGColor set to " + currentSettingStatus);
                 } else if (setting == "PDShareData") {
+                    chrome.storage.local.set({ PDActivationWarningToBeShown: true }, function () {});
                     writeStats("PDShareData set to false"); //If set to true, this will automatically be blocked
                     handleStatsSharing(currentSettingStatus);
                 }
@@ -116,28 +119,58 @@ function checkAndSetProlificID() {
             ) {
                 //should be length 24
                 prolificID = window.prompt(
-                    'Enter your Prolific ID. Type "none" if you are not part of the study. \nIMPORTANT: Enter the ID correctly and without spaces!'
+                    'Enter your Prolific ID. Type "none" if you are not part of the study or were recruited other than Prolific. \nIMPORTANT: Enter the ID correctly and without spaces!'
                 );
             }
-            chrome.storage.local.set(
-                { PDProlificID: prolificID },
-                function () {}
-            );
-            if (!(prolificID == "none")) {
-                chrome.storage.local.get("PDIDNumberOfClient", function (items) {
-                    chrome.storage.local.set(
-                        { PDIDNumberOfClient: prolificID + "_" +  items["PDIDNumberOfClient"]},
-                        function () {}
-                    );
-                });
-                chrome.storage.local.get("PDProlificStudyCompleted", function (items) {
-                    console.log(items["PDProlificStudyCompleted"]);
-                    if (items["PDProlificStudyCompleted"] == false) {
-                        window.alert("If you are recruited by Prolific: The Prolific completion code is PD22LMU\nCopy and paste it into the Google Forms.")
-                        chrome.storage.local.set({ PDProlificStudyCompleted: "true" }, function () {});
+            if (prolificID == "none") {
+                chrome.storage.local.get(
+                    "PDIDNumberOfClient",
+                    function (items) {
+                        IDNr = items["PDIDNumberOfClient"] + "_";
+                        chrome.storage.local.set(
+                            { PDProlificID: IDNr.split("_")[0] },
+                            function () {}
+                        );
                     }
-                });
+                );
+            } else {
+                chrome.storage.local.set(
+                    { PDProlificID: prolificID },
+                    function () {}
+                );
             }
+            writeStats("ProlificID set to " + prolificID);
+            if (!(prolificID == "none")) {
+                chrome.storage.local.get(
+                    "PDIDNumberOfClient",
+                    function (items) {
+                        console.log(items["PDIDNumberOfClient"]);
+                        var PDID = items["PDIDNumberOfClient"] + "_";
+                        chrome.storage.local.set(
+                            {
+                                PDIDNumberOfClient:
+                                    PDID.split("_")[0] + "_" + prolificID,
+                            },
+                            function () {}
+                        );
+                    }
+                );
+                chrome.storage.local.get(
+                    "PDProlificStudyCompleted",
+                    function (items) {
+                        if (items["PDProlificStudyCompleted"] == false) {
+                            window.alert(
+                                "If you are recruited by Prolific: The Prolific completion code is PD22LMU\nCopy and paste it into the Google Forms."
+                            );
+                            chrome.storage.local.set(
+                                { PDProlificStudyCompleted: "true" },
+                                function () {}
+                            );
+                        }
+                    }
+                );
+            }
+            document.location.reload();
         }
     });
 }
@@ -145,6 +178,7 @@ function checkAndSetProlificID() {
 //Main function, coordinates the popup
 async function init() {
     checkAndSetProlificID();
+    writeStats("popup");
     await chrome.storage.local.get("PDlanguage", function (items) {
         language = items["PDlanguage"];
     });
@@ -172,19 +206,18 @@ async function init() {
         createElementWithClass("div", "prolificID")
     );
     chrome.storage.local.get("PDProlificID", function (items) {
-        prolificID.innerHTML = "ProlificID: " + items["PDProlificID"];
+        prolificID.innerHTML = "ID: " + items["PDProlificID"];
         var resetProlific = prolificID.appendChild(
             createElementWithClass("button", "resetProlificID")
         );
         resetProlific.innerHTML = "Reset ID";
         resetProlific.addEventListener("click", resetProlificFun);
-        function resetProlificFun() {
+        async function resetProlificFun() {
             chrome.storage.local.set({ PDProlificID: "" }, function () {});
             window.alert(texts.texts.prolific.reset[language]);
+            await sleep(5); //Allowing to set the ID before reloading
             document.location.reload();
         }
-        
-        
     });
 
     iconsRight = identifier.appendChild(
@@ -233,7 +266,7 @@ async function init() {
     currentPageText.innerHTML =
         texts.texts.currentPage.currentPageText[language];
     await chrome.runtime.sendMessage(
-        { VTTtoCheckURL: "getCurrentTabURL" },
+        { RequestReason: "getCurrentTabURL" },
         function (response) {
             currentSiteShort = response.currentURL;
             chrome.storage.local.get("PDopenPageInfos", function (items) {
@@ -253,7 +286,6 @@ async function init() {
                             (warningType = siteStatus),
                             (warningReason = siteReason)
                         );
-                        writeStats("popup");
                         siteInKnown = true;
                         //At warning, offer the option to declare as safe manually
                         if (siteStatus == "warning") {
@@ -277,6 +309,7 @@ async function init() {
                                 .getElementsByClassName("pageInfos warning")[0]
                                 .appendChild(clickSafeButton);
                         }
+                        writeStats("Popup texts set");
                         break;
                     }
                 }
@@ -290,7 +323,7 @@ async function init() {
                         (warningType = "unknown"),
                         (warningReason = "notOpened")
                     );
-                    writeStats("popup");
+                    writeStats("Popup unknownTexts set");
                 }
             });
         }
@@ -556,7 +589,7 @@ function markAsSafeSite() {
                 [currentSiteShort, "safe", "userOverwrite", "[]"],
             ].concat(infoArray);
             chrome.runtime.sendMessage(
-                { VTTtoCheckURL: "safeSite" },
+                { RequestReason: "safeSite" },
                 function (response) {}
             );
             chrome.storage.local.set(
@@ -588,7 +621,7 @@ function writeStats(type) {
         } else {
             chrome.runtime.sendMessage(
                 {
-                    VTTtoCheckURL: "writeStats",
+                    RequestReason: "writeStats",
                     statsToWrite: [
                         Date.now(),
                         type,
@@ -618,7 +651,7 @@ texts = {
             },
             shortIndication: {
                 warning: {
-                    english: "Fradulent Site",
+                    english: "Fraudulent Site",
                     german: "Sch&auml;dliche Seite",
                 },
                 safe: {
@@ -658,7 +691,7 @@ texts = {
                     },
                     userOverwrite: {
                         english:
-                            " was detected as fradulent by us, but you marked it as safe.",
+                            " was detected as fraudulent by us, but you marked it as safe.",
                         german: "wurde von uns als sch&auml;dlich erkannt, aber Sie haben es als sicher markiert.",
                     },
                 },
@@ -731,7 +764,8 @@ texts = {
                     german: "Phishing-Schutz aktivieren",
                 },
                 explanation: {
-                    english: "Activate PDIcon insertion and scanning of new visited pages. This window will always be active.",
+                    english:
+                        "Activate PDIcon insertion and scanning of new visited pages. This window will always be active.",
                     german: "PDIcon und das Scannen von neu besuchten Seiten aktivieren. Dieses Fenster wird immer aktiv sein.",
                 },
             },
@@ -776,8 +810,8 @@ texts = {
         prolific: {
             reset: {
                 english:
-                    'WARNING: Entering "none" in the next step will only reset the displayed version of your ID. If you do not wish to share data, please disable the option, deleting the ID will not do this.',
-                german: 'ACHTUNG: Wenn Sie im naechsten Schritt "none" eingeben, wird nur die angezeigte Version Ihrer ID zurueckgesetzt. Wenn Sie keine Daten teilen moechten, deaktivieren Sie bitte die Option, das Loeschen der ID wird dies nicht bewirken.',
+                    'WARNING: Entering "none" in the next step will not delete your ID, but reset the visualized value to the default value. If you do not wish to share data, please disable the option "Share Statistics".',
+                german: 'ACHTUNG: Wenn Sie im naechsten Schritt "none" eingeben, wird Ihre ID nicht gelöscht, sondern die Anzeige wird auf den Ursprungswert zurueckgesetzt. Wenn Sie keine Daten teilen moechten, deaktivieren Sie bitte die Option "Statistik teilen".',
             },
         },
     },
