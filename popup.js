@@ -525,10 +525,10 @@ function setIdentifierText(
 
         //Link VTT results
         var VTTResultsLink = createElementWithClass("a", "VTTResultsLink");
-        var currentSiteB64 = btoa(currentSite).replaceAll("=", ""); //Somehow, VTT can't handle '='
+        //var currentSiteB64 = btoa(currentSite).replaceAll("=", ""); //Somehow, VTT can't handle '='
         VTTResultsLink.setAttribute(
             "href",
-            "https://www.virustotal.com/gui/url/" + currentSiteB64
+            "https://www.virustotal.com/gui/domain/" + currentSite
         );
         VTTResultsLink.setAttribute("target", "_blank");
         VTTResultsLink.innerHTML =

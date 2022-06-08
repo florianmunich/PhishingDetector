@@ -528,10 +528,10 @@ function appendTexts(rating, reason) {
 
         //Link VTT results
         var VTTResultsLink = createElementWithClass("a", "VTTResultsLink");
-        var currentSiteB64 = btoa(currentSiteShort).replaceAll("=", ""); //Somehow, VTT can't handle '='
+        //var currentSiteB64 = btoa(currentSiteShort).replaceAll("=", ""); //Somehow, VTT can't handle '='
         VTTResultsLink.setAttribute(
             "href",
-            "https://www.virustotal.com/gui/url/" + currentSiteB64
+            "https://www.virustotal.com/gui/domain/" + currentSiteShort
         );
         VTTResultsLink.setAttribute("target", "_blank");
         VTTResultsLink.innerHTML =

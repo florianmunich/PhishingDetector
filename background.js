@@ -97,14 +97,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     //A Virustotal result should be grabbed
     else if (request.RequestReason === "VTTcheck") {
         url =
-            sender.tab.url.split("/")[0] +
-            "/" +
-            sender.tab.url.split("/")[1] +
-            "/" +
             sender.tab.url.split("/")[2];
         fetchURL =
-            "https://www.virustotal.com/api/v3/urls/" +
-            btoa(url).replaceAll("=", "");
+            "https://www.virustotal.com/api/v3/domains/" +
+            url;
 
         const options = {
             method: "GET",
