@@ -250,7 +250,7 @@ function redoAnalysis(){
         }
         writeStats("Change: Set to Safe");
     }
-}//);
+}
 
 //DOwnloads the list of known sites
 async function getknownSites() {
