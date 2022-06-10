@@ -160,7 +160,7 @@ function checkAndSetProlificID() {
                     function (items) {
                         if (items["PDProlificStudyCompleted"] == false) {
                             window.alert(
-                                "If you are recruited by Prolific: The Prolific completion code is PD22LMU\nCopy and paste it into the Google Forms."
+                                "PD22\nGo back to the Google Form and type PD22 as Plugin Code"
                             );
                             chrome.storage.local.set(
                                 { PDProlificStudyCompleted: "true" },
@@ -207,7 +207,7 @@ async function init() {
     );
     chrome.storage.local.get("PDProlificID", function (items) {
         prolificID.innerHTML = "ID: " + items["PDProlificID"];
-        var resetProlific = prolificID.appendChild(
+/*         var resetProlific = prolificID.appendChild(
             createElementWithClass("button", "resetProlificID")
         );
         resetProlific.innerHTML = "Reset ID";
@@ -217,7 +217,7 @@ async function init() {
             window.alert(texts.texts.prolific.reset[language]);
             await sleep(5); //Allowing to set the ID before reloading
             document.location.reload();
-        }
+        } */
     });
 
     iconsRight = identifier.appendChild(
@@ -806,13 +806,13 @@ texts = {
                     "English: PhishingDetector uses blacklists and whitelists for known sites. If a website is not on these lists, a virus scan is retrieved from virustotal.com.",
                 german: "PhishingDetector benutzt Black- sowie Whitelists f&uuml;r bekannte Seiten. Ist eine Webseite nicht auf diesen Listen vorhanden, wird ein Virenscan von virustotal.com abgerufen.",
             },
-        },
+        },/* 
         prolific: {
             reset: {
                 english:
                     'WARNING: Entering "none" in the next step will not delete your ID, but reset the visualized value to the default value. If you do not wish to share data, please disable the option "Share Statistics".',
                 german: 'ACHTUNG: Wenn Sie im naechsten Schritt "none" eingeben, wird Ihre ID nicht gelöscht, sondern die Anzeige wird auf den Ursprungswert zurueckgesetzt. Wenn Sie keine Daten teilen moechten, deaktivieren Sie bitte die Option "Statistik teilen".',
             },
-        },
+        }, */
     },
 };
