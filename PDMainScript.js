@@ -134,7 +134,7 @@ async function main() {
                     ].concat(infoArray);
                     chrome.storage.local.set(
                         { PDopenPageInfos: infoArray },
-                        function () {}
+                        function () {redoAnalysis();}
                     );
                 });
                 siteStatus = "unknown";
@@ -173,7 +173,7 @@ function processStatus(writeStatus, VTTarray) {
                 ].concat(infoArray);
                 chrome.storage.local.set(
                     { PDopenPageInfos: infoArray },
-                    function () {}
+                    function () {redoAnalysis();}
                 );
             }
         });
@@ -196,7 +196,7 @@ function processStatus(writeStatus, VTTarray) {
                 ].concat(infoArray);
                 chrome.storage.local.set(
                     { PDopenPageInfos: infoArray },
-                    function () {}
+                    function () {redoAnalysis();}
                 );
             }
         });
@@ -225,36 +225,32 @@ function processStatus(writeStatus, VTTarray) {
 }
 
 //Redo analysis if security information changes
-chrome.storage.onChanged.addListener(function (changes, namespace) {
-    for (key in changes) {
-        if (key === "PDopenPageInfos") {
-            PDIcons = document.getElementsByClassName("PDIcon");
-            if (warningSite) {
-                chrome.runtime.sendMessage(
-                    { RequestReason: "warningSite" },
-                    function (response) {}
-                );
-                for (let PDIcon of PDIcons) {
-                    PDIcon.firstChild.classList.add("warningSecurityLogo");
-                    PDIcon.firstChild.classList.remove("safeSecurityLogo");
-                    PDIcon.firstChild.classList.remove("unknownSecurityLogo");
-                }
-                writeStats("Change: Set to Warning");
-            } else if (safeSite) {
-                chrome.runtime.sendMessage(
-                    { RequestReason: "safeSite" },
-                    function (response) {}
-                );
-                for (let PDIcon of PDIcons) {
-                    PDIcon.firstChild.classList.remove("warningSecurityLogo");
-                    PDIcon.firstChild.classList.add("safeSecurityLogo");
-                    PDIcon.firstChild.classList.remove("unknownSecurityLogo");
-                }
-                writeStats("Change: Set to Safe");
-            }
+function redoAnalysis(){
+    PDIcons = document.getElementsByClassName("PDIcon");
+    if (warningSite) {
+        chrome.runtime.sendMessage(
+            { RequestReason: "warningSite" },
+            function (response) {}
+        );
+        for (let PDIcon of PDIcons) {
+            PDIcon.firstChild.classList.add("warningSecurityLogo");
+            PDIcon.firstChild.classList.remove("safeSecurityLogo");
+            PDIcon.firstChild.classList.remove("unknownSecurityLogo");
         }
+        writeStats("Change: Set to Warning");
+    } else if (safeSite) {
+        chrome.runtime.sendMessage(
+            { RequestReason: "safeSite" },
+            function (response) {}
+        );
+        for (let PDIcon of PDIcons) {
+            PDIcon.firstChild.classList.remove("warningSecurityLogo");
+            PDIcon.firstChild.classList.add("safeSecurityLogo");
+            PDIcon.firstChild.classList.remove("unknownSecurityLogo");
+        }
+        writeStats("Change: Set to Safe");
     }
-});
+}//);
 
 //DOwnloads the list of known sites
 async function getknownSites() {
