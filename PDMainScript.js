@@ -30,6 +30,8 @@ chrome.storage.local.get("PDactivationStatus", function (items) {
     if (enabled) main();
 });
 
+window.addEventListener("click",writeStats("click"));
+
 //Helper Function
 //Waits a given time in milliseconds
 function sleep(milliseconds) {
@@ -288,7 +290,7 @@ async function getVirusTotalInfo(backoff) {
 
             //If site was never scanned before, request a scan
             if (VTTattempts == 1 && "error" in resp.VTTresult) {
-                console.log("PD:Page not scanned by VTT before!");
+                console.log("PD:Domain not scanned by VTT before!");
                 var i = 0;
                 chrome.runtime.sendMessage(
                     { RequestReason: "VTTrequestScan" },
@@ -769,8 +771,8 @@ var texts = {
         hoverBox: {
             warningType: {
                 warning: {
-                    english: "Warning",
-                    german: "Warnung",
+                    english: "Danger",
+                    german: "Gefahr",
                 },
                 moderate: {
                     english: "Caution",
