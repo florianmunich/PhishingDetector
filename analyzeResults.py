@@ -112,11 +112,27 @@ def getRequestedActivityType(activityArray, type):
             typeArray += [entry]
     return typeArray
 
+def getPopupsPerType(type):
+    popupTypeArray = []
+    popups = getRequestedActivityType(activityArray, "popup")
+    for entry in popups:
+        if(entry[3] == type):
+            popupTypeArray += [entry]
+    return popupTypeArray
+
 def getIconsPerType(activityArray, type):
     icons = getRequestedActivityType(activityArray, "icon")
     iconArray = []
     for icon in icons:
         if(icon[3] == type):
+            iconArray += [icon]
+    return iconArray
+
+def getIconsAttentionTest(activityArray):
+    icons = getRequestedActivityType(activityArray, "icon")
+    iconArray = []
+    for icon in icons:
+        if(icon[4] == "attentionTest"):
             iconArray += [icon]
     return iconArray
 
@@ -187,6 +203,22 @@ def getActivitiesPerTab(activityArray):
                     tab += [[entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], entry[6]]]
     return tabArray
 
+def getAttentionTestTabs(activityArray):
+    tabArray = []
+    knownTabs = []
+    for entry in activityArray:
+        if(not entry[4] == "attentionTest"): continue
+        #if tab has no entry yet, create one
+        if(not entry[5] in knownTabs):
+            knownTabs += [entry[5]]
+            tabArray += [[entry[5], [entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], entry[6]]]]
+        #otherwise look for the domain's entry and add the activity
+        else:
+            for tab in tabArray:
+                if(entry[5] == tab[0]):#found the web page
+                    tab += [[entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], entry[6]]]
+    return tabArray
+
 #requires an array as produced by getActivitiesPerDomain(activityArray) and either "safe" , "unknown", or "warning"
 def whatWasDoneAfterIconInsertion(tabArray, safetyType):
     actionArray = []
@@ -194,22 +226,54 @@ def whatWasDoneAfterIconInsertion(tabArray, safetyType):
         tabHistory = tab[1:]
         for idx, entry in enumerate(tabHistory):
             if(entry[2] == "icon" and entry[3] == safetyType):
-                allowedActions = ["windowUnload", "PDSiteFunctionalityInitiated"]
+                allowedActions = ["windowUnload", "PDSiteFunctionalityInitiated", "Change: Set to Safe", "Change: Set to warning", "popup", "hover", "unhover", "markSafe", "markSafeYes", "markSafeNo"]
+                endActions = ["windowUnload", "PDSiteFunctionalityInitiated"]
                 #allowed actions we want to track are
                 # - windowUnload --> Verlassen der Webseite (oder refresh)
                 # - PDSiteFunctionalityInitiated --> Neue Webseite aufgerufen durch Klicken auf der Seite --> Auf Domain geblieben
+                # - popup -> windowUnload; PDSiteFunctionalityInitiated; markSafe -> markSafeYes; markSaffeNo
+                # - hover -> windowUnload; PDSiteFunctionalityInitiated
+                # - icon -> reestimation of the security information 
+                # only when window is unloaded or a new page is loaded, the action is done
                 foundNextAction = False
                 i = 1
+                actionForArray = []
                 while(not foundNextAction):
                     if(idx + i + 1 > len(tabHistory)): 
-                        actionArray += [[0, "none"]]
+                        actionForArray += [[0, "none"]]
                         foundNextAction = True
                     elif any(tabHistory[idx + i][2] in s for s in allowedActions):
-                        actionArray += [[tabHistory[idx + i][0] - entry[0], tabHistory[idx + i][2], entry[6], tabHistory[idx + i][6]]]
-                        foundNextAction = True
+                        actionForArray += [[tabHistory[idx + i][0] - entry[0], tabHistory[idx + i][2], entry[6], tabHistory[idx + i][6]]]
+                        if any(tabHistory[idx + i][2] in s for s in endActions):
+                            foundNextAction = True
                     i += 1
+                actionArray += [actionForArray]
     return actionArray
+    #[[duration, action, webiteFrom, websiteTo]]
 
+def getCumulatedInfos(actionsAfterTypeArray, index):
+    cumulatedArray = []
+    knownActions = []
+
+    #preprocessing, put "Same" at the end, if action stays on the same page  
+    for participant in actionsAfterTypeArray:
+        for insertion in participant:
+            for entry in insertion:
+                if(entry[1] == "none"): continue
+                if(entry[2] == entry[3] and (entry[1] == "windowUnload" or entry[1] == "PDSiteFunctionalityInitiated")):
+                    entry[1] += "Same"
+
+    for participant in actionsAfterTypeArray:
+        for insertion in participant:
+            entry = insertion[index]
+            if(not entry[1] in knownActions):
+                knownActions += [entry[1]]
+                cumulatedArray += [[entry[1],1]]
+            else:
+                for idx, action in enumerate(cumulatedArray):
+                    if(action[0] == entry[1]):
+                        cumulatedArray[idx][1] += 1
+    return cumulatedArray
 
 
 installationDates = []
@@ -229,6 +293,10 @@ numberWarningIcons = 0
 numberSafeIconsPerUser = []
 numberWarningIconsPerUser = []
 
+numberAttentionTests = 0
+numberAttentionTestsPerUser = []
+attentionTestsPerUser = []
+
 numberHovers = 0
 numberHoversPerUser = []
 
@@ -237,9 +305,28 @@ durationHoverPerUserMedian = []
 
 numberPopups = 0
 numberPopupsPerUser = []
+numberPopupsSafe = 0
+numberPopupsSafePerUser = []
+numberPopupsUnknown = 0
+numberPopupsUnknownPerUser = []
+numberPopupsWarning = 0
+numberPopupsWarningPerUser = []
+
+numberPopupIconChanged = 0
+numberPopupIconChangedSafe = 0
+numberPopupIconChangedWarning = 0
+numberPopupIconChangedPerUser = []
+numberPopupIconChangedSafePerUser = []
+numberPopupIconChangedWarningPerUser = []
 
 numberKnownPages = 0
 numberKnownPagesPerUser = []
+
+actionsAfterIconSafeInsertion = []
+actionsAfterIconUnknownInsertion = []
+actionsAfterIconWarningInsertion = []
+actionsAfterAttentionIconInsertion = []
+actionsAfterAttentionIconCumulated = []
 
 for participant in participantResultsFilesArray:
     file = open(folderPath + "/" + participant)
@@ -271,6 +358,12 @@ for participant in participantResultsFilesArray:
     numberIconsShowed += len(icons)
     numberIconsShowedPerUser += [len(icons)]
 
+    attentionTests = getIconsAttentionTest(activityArray)
+    numberAttentionTests += len(attentionTests)
+    numberAttentionTestsPerUser += [len(attentionTests)]
+    attentionTestsPerUser += [attentionTests]
+    attentionTestTabs = getAttentionTestTabs(activityArray)
+
     iconsSafe = getIconsPerType(activityArray, "safe")
     numberSafeIcons += len(iconsSafe)
     numberSafeIconsPerUser += [len(iconsSafe)]
@@ -281,12 +374,33 @@ for participant in participantResultsFilesArray:
     popups = getRequestedActivityType(activityArray, "popup")
     numberPopups += len(popups)
     numberPopupsPerUser += [len(popups)]
+    numberPopupsSafe += len(getPopupsPerType("safe"))
+    numberPopupsSafePerUser += [getPopupsPerType("safe")]
+    numberPopupsUnknown += len(getPopupsPerType("unknown"))
+    numberPopupsUnknown += len(getPopupsPerType("none"))
+    numberPopupsUnknownPerUser += [getPopupsPerType("unknown") + getPopupsPerType("none")]
+    numberPopupsWarning += len(getPopupsPerType("warning"))
+    numberPopupsWarningPerUser += [getPopupsPerType("warning")]
+
+    numberPopupIconChanged += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
+    + len(getRequestedActivityType(activityArray, 'Popup icon set red'))
+    numberPopupIconChangedPerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set green'))
+    + len(getRequestedActivityType(activityArray, 'Popup icon set red'))]
+    numberPopupIconChangedSafe += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
+    numberPopupIconChangedWarning += len(getRequestedActivityType(activityArray, 'Popup icon set red'))
+    numberPopupIconChangedSafePerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set green'))]
+    numberPopupIconChangedWarningPerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set red'))]
+    
 
     knownPagesArray = getKnownPagesArray(file)
     numberKnownPages += len(knownPagesArray)
     numberKnownPagesPerUser += [len(knownPagesArray)]
 
-    whatWasDoneAfterIconInsertion(tabArray, "safe")
+    actionsAfterIconSafeInsertion += [whatWasDoneAfterIconInsertion(tabArray, "safe")]
+    actionsAfterIconUnknownInsertion += [whatWasDoneAfterIconInsertion(tabArray, "unknown")]
+    actionsAfterIconWarningInsertion += [whatWasDoneAfterIconInsertion(tabArray, "warning")]
+    actionsAfterAttentionIconInsertion += [whatWasDoneAfterIconInsertion(attentionTestTabs, "safe")]
+
 
 installationDates = sorted(installationDates)
 installationDateFirst = str(datetime.fromtimestamp(int(installationDates[0]/1000)))
@@ -309,8 +423,8 @@ numberWarningIconsMedian = statistics.median(numberWarningIconsPerUser)
 
 numberHoversMean = numberHovers / numberParticipants
 numberHoversMedian = statistics.median(numberHoversPerUser)
-durationHoverMean = round(statistics.mean(durationHoverPerUserMean))
-durationHoverMedian = round(statistics.median(durationHoverPerUserMedian))
+#durationHoverMean = round(statistics.mean(durationHoverPerUserMean))
+#durationHoverMedian = round(statistics.median(durationHoverPerUserMedian))
 
 numberPopupsMean = numberPopups / numberParticipants
 numberPopupsMedian = statistics.median(numberPopupsPerUser)
@@ -318,131 +432,13 @@ numberPopupsMedian = statistics.median(numberPopupsPerUser)
 numberKnownPagesMean = numberKnownPages / numberParticipants
 numberKnownPagesMedian = statistics.median(numberKnownPagesPerUser)
 
+actionsAfterAttentionIconCumulated = getCumulatedInfos(actionsAfterAttentionIconInsertion, 0)
+actionsAfterAttentionIconFinalActionCumulated = getCumulatedInfos(actionsAfterAttentionIconInsertion, -1)
+actionsAfterSafeIconCumulated = getCumulatedInfos(actionsAfterIconSafeInsertion, 0)
+actionsAfterSafeIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconSafeInsertion, -1)
+actionsAfterWarningIconCumulated = getCumulatedInfos(actionsAfterIconWarningInsertion, 0)
+actionsAfterWarningIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconWarningInsertion, -1)
+actionsAfterUnknownIconCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, 0)
+actionsAfterUnknownIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, -1)
+
 print("Ende")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def analzyeFileNew(fileNumber):
-    currentFile = open(folderPath + "/" + participantResultsFilesArray[fileNumber])
-    currentFile = currentFile.readlines()
-    installationDateInt = currentFile[1].rstrip().split(":")[0]
-    installationDateString = currentFile[1].rstrip().split(" ")[1]
-
-    generalStatistics = []
-    generalStatisticsHumanRead = []
-    injections = []
-    numberKnownPages = 0
-    knownPages = []
-
-def analyzeFile(fileNumber):
-    currentFile = open(folderPath + "/" + participantResultsFilesArray[fileNumber])
-    currentFile = currentFile.readlines()
-    installationDateInt = currentFile[1].rstrip().split(":")[0]
-    installationDateString = currentFile[1].rstrip().split(" ")[1]
-
-    generalStatistics = []
-    generalStatisticsHumanRead = []
-    injections = []
-    numberKnownPages = 0
-    knownPages = []
-
-    checkInjection = False
-    checkNumberKnownPages = False
-    checkKnownPages = False
-    checkGeneralStatistics = False
-    for line in currentFile:
-        if(line == "\n"): checkGeneralStatistics = False
-        elif(line == "[Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]\n"): checkGeneralStatistics = True
-        elif(checkGeneralStatistics):
-            timestamp = int(line.split(":")[0])
-            generalStatistics += [timestamp]
-            generalStatisticsHumanRead += [str(datetime.fromtimestamp(int(timestamp/1000)))]
-        lineSimple = line.rstrip()
-        if(lineSimple == "---End of injections---"): checkInjection = False
-        elif(checkInjection):
-            injections += [[lineSimple.split(",")[0], lineSimple.split(",")[1], lineSimple.split(",")[2], lineSimple.split(",")[3], lineSimple.split(",")[4], lineSimple.split(",")[5]]]
-        elif(lineSimple == "---Begin list of injections [timestamp, id, action performed, siteStatus, reason, pageURL]---"):
-            checkInjection = True
-        elif(checkNumberKnownPages): 
-            numberKnownPages = int(lineSimple)
-            checkNumberKnownPages = False
-        elif(lineSimple == "Currently known pages:"): checkNumberKnownPages = True
-        elif(checkKnownPages):
-            pageToAdd = [lineSimple.split(",")[0], lineSimple.split(",")[1], lineSimple.split(",")[2]]
-            try:
-                pageToAdd += [lineSimple.split(",",3)[3]]
-            except:
-                pageToAdd += [""]
-            if(not pageToAdd[3] ==""):
-                pageToAdd[3] = [int(pageToAdd[3].split(",")[0]), int(pageToAdd[3].split(",")[1]), int(pageToAdd[3].split(",")[2])]
-            else: pageToAdd[3] = []
-            knownPages += [pageToAdd]
-        elif(lineSimple == "---Begin list of known pages [site, status, reason, (if applicable VTT results)]---"):checkKnownPages = True
-    return generalStatistics, generalStatisticsHumanRead, injections, knownPages
-
-def analyzeAllFiles():
-    allFiles = []
-    for idx, x in enumerate(participantResultsFilesArray):
-        generalStatistics, generalStatisticsHumanRead, injections, knownPages = analyzeFile(idx)
-        allFiles += [analyzeFile(idx)]
-    return allFiles
-
-def getTotalNumbers(allFiles):
-    numberParticipants = len(allFiles)
-    numberIconSafe = 0
-    numberIconWarning = 0
-    numberIconUnknown = 0
-    numberHoverSafe = 0
-    numberHoverUnknown = 0
-    numberHoverWarning = 0
-    numberPopupClick = 0
-    numberPopupSafe = 0
-    numberPopupWarning = 0
-    numberPopupUnknown = 0
-    numberVTTInitiated = 0
-    numberPopupIconSafe = 0
-    numberPopupIconUnknown = 0
-    numberPopupIconWarning = 0
-    numberLeaves = 0
-
-    for file in allFiles:
-        for stat in file[2]:
-            if(stat[2] == "icon"):
-                if(stat[3] == "safe"): numberIconSafe += 1
-                if(stat[3] == "unknown"): numberIconUnknown += 1
-                if(stat[3] == "warning"): numberIconWarning += 1
-            elif(stat[2] == "popup"):
-                if(stat[3] == "safe"): numberPopupSafe += 1
-                if(stat[3] == "unknown"): numberPopupUnknown += 1
-                if(stat[3] == "warning"): numberPopupWarning += 1
-            elif(stat[2] == "hover"):
-                if(stat[3] == "safe"): numberHoverSafe += 1
-                if(stat[3] == "safe"): numberHoverSafe += 1
-                if(stat[3] == "safe"): numberHoverSafe += 1
-            elif(stat[2] == "VTTinitiated"): numberVTTInitiated += 1
-            elif(stat[2] == "Popup icon set to green (safeSite)"): numberPopupIconSafe += 1
-            elif(stat[2] == "Popup icon set to yellow (unknownSite)"): numberPopupIconUnknown += 1
-            elif(stat[2] == "Popup icon set to red (warningSite)"): numberPopupIconWarning += 1
-            elif(stat[2] == "leaveClick"): numberLeaves += 1
-    return 0
-
-#allFiles = analyzeAllFiles()
-#getTotalNumbers(allFiles)
