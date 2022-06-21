@@ -40,7 +40,7 @@ def getNumberActivities(fileReadlines):
     #Find out how many actions there are
     for idx, line in enumerate(fileReadlines):
         if(line == "---End of injections---\n"):
-            return int(fileReadlines[idx-1].split(",")[1]) + 1
+            return idx - 10
 
 def getActivityArray(fileReadlines):
     activityArray = []
@@ -50,9 +50,9 @@ def getActivityArray(fileReadlines):
     for idx in range(numberActions):
         line = fileReadlines[idx + 9].rstrip() #as the first 9 lines are not part of the injection array
         a = True
-        #Make sure the ID is correct
-        if(not int(fileReadlines[idx + 9].split(",")[1]) == idx):
-            raise Exception("ID value not as expected")
+        #Make sure the ID is correct #Deprecated, as files are copied into each other
+        #if(not int(fileReadlines[idx + 9].split(",")[1]) == idx):
+        #    raise Exception("ID value not as expected")
         #put line into activityArray
         entryForActivityArray = [int(line.split(",")[0])] #Timestamp
         entryForActivityArray += [str(datetime.fromtimestamp(int(line.split(",")[0])/1000))] #Human readable time
@@ -119,7 +119,8 @@ def getKnownPagesArray(fileReadlines):
             except:
                 VTTArray = None
             currentPage += [VTTArray]
-            pageArray += [currentPage]
+            if(not currentPage in pageArray):
+                pageArray += [currentPage]
     return pageArray
 
 def getNumberOfPageInits(activityArray):
