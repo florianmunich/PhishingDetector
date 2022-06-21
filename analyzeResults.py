@@ -8,13 +8,24 @@ import matplotlib.pyplot as plt
 
 import statistics
 
-folderPath = ""#Enter folder path of files here
+folderPath = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults"#Enter folder path of files here
 
 
 participantResultsFilesArray = []
 for (dirpath, dirnames, filenames) in walk(folderPath):
     participantResultsFilesArray.extend(filenames)
     break
+
+""" #Should be done manually
+def correctStatsFiles():
+    for idx, file in enumerate(participantResultsFilesArray):
+        for i in range(len(participantResultsFilesArray) - idx - 1):
+            a = 0
+            if(file.split('_')[1] == participantResultsFilesArray[idx + i + 1].split('_')[1]):
+                print("Hello")
+    print("donothing")
+
+correctStatsFiles() """
 
 #return general information [Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]
 #each with [timestamp, humanReadable Time]
@@ -60,6 +71,26 @@ def activityArrayReplaceEmptyWithNone(activityArray):
         for idy, cell in enumerate(row):
             if(cell == ""):
                 activityArray[idx][idy] = 'none'
+    return activityArray
+
+#Fill in blanks that are known but not put in stats
+def correctActivityInfo(activityArray):
+    for idx, row in enumerate(activityArray):
+        if(row[2] == "popup"):
+            for i in range(idx):
+                if(activityArray[idx - (i+1)][2] == "tabChange"):
+                    row[5] = activityArray[idx - (i+1)][5]
+                    break
+        if(row[3] == 'none' or row[4] == 'none' or row[6] == 'none'):
+            for i in range(idx):
+                if(activityArray[idx - (i+1)][5] == row[5] and not (activityArray[idx - (i+1)][3] == 'none')):
+                    row[3] = activityArray[idx - (i+1)][3]
+                    row[4] = activityArray[idx - (i+1)][4]
+                    row[6] = activityArray[idx - (i+1)][6]
+                    break
+    """     for row in activityArray:
+        if(row[2] == "popup"):
+            print(row) """
     return activityArray
 
 def getNumberOfKnownPages(fileReadlines):
@@ -337,6 +368,7 @@ for participant in participantResultsFilesArray:
 
     activityArray = getActivityArray(file)
     activityArray = activityArrayReplaceEmptyWithNone(activityArray)
+    activityArray = correctActivityInfo(activityArray)
     numberActionsPerformed += len(activityArray)
     numberActionsPerformedPerUser += [len(activityArray)]
 
