@@ -490,6 +490,11 @@ function buildInfoContainer(iconAppended) {
     var position = iconAppended.getBoundingClientRect();
     container.style.left = position.left + position.width + "px";
     container.style.top = position.top + 10 + "px";
+    left = position.left + position.width;
+    if(left + 300 > document.getElementsByTagName('body')[0].getBoundingClientRect().width){
+        left = Math.max(left - 300 - 50,0); 
+        container.style.left = left + "px";
+    }
 
     document.body.insertBefore(container, document.body.firstChild);
     return container;
