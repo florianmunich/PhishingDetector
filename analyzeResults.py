@@ -7,8 +7,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import statistics
+import time
+import shutil
+import copy
 
+time_start = time.time()
+folderPathRAW = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults/RAW"
 folderPath = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults"#Enter folder path of files here
+
+
+########################################### FINAL PROCESSING ############################################
+
 
 
 participantResultsFilesArray = []
@@ -47,7 +56,7 @@ def getActivityArray(fileReadlines):
     numberActions = getNumberActivities(fileReadlines)
 
     #go through every action and put it into array
-    for idx in range(numberActions):
+    for idx in range(numberActions + 1):
         line = fileReadlines[idx + 9].rstrip() #as the first 9 lines are not part of the injection array
         a = True
         #Make sure the ID is correct #Deprecated, as files are copied into each other
@@ -205,6 +214,14 @@ def getMediumHoverDuration(hoverArray):
         return totalTime / numberHovers
     return 0
 
+def getVTTPageInits(activityArray):
+    numberVisits = 0
+    for entry in activityArray:
+        if(entry[6] == "www.virustotal.com"):
+            numberVisits += 1
+    return numberVisits
+
+
 def getActivitiesPerDomain(activityArray):
     domainArray = []
     knownDomains = []
@@ -308,170 +325,267 @@ def getCumulatedInfos(actionsAfterTypeArray, index):
     return cumulatedArray
 
 
-installationDates = []
+def main():
+    installationDates = []
 
-numberParticipants = len(participantResultsFilesArray)
-numberActionsPerformed = 0
-numberActionsPerformedPerUser = []
+    numberParticipants = len(participantResultsFilesArray)
+    numberActionsPerformed = 0
+    numberActionsPerformedPerUser = []
 
-numberPDInitiates = 0
-numberPDInitiatesPerUser = []
+    numberPDInitiates = 0
+    numberPDInitiatesPerUser = []
 
-numberIconsShowed = 0
-numberIconsShowedPerUser = []
+    numberIconsShowed = 0
+    numberIconsShowedPerUser = []
 
-numberSafeIcons = 0
-numberWarningIcons = 0
-numberSafeIconsPerUser = []
-numberWarningIconsPerUser = []
+    numberSafeIcons = 0
+    numberWarningIcons = 0
+    numberSafeIconsPerUser = []
+    numberWarningIconsPerUser = []
 
-numberAttentionTests = 0
-numberAttentionTestsPerUser = []
-attentionTestsPerUser = []
+    numberAttentionTests = 0
+    numberAttentionTestsPerUser = []
+    attentionTestsPerUser = []
 
-numberHovers = 0
-numberHoversPerUser = []
+    numberHovers = 0
+    numberHoversPerUser = []
 
-durationHoverPerUserMean = []
-durationHoverPerUserMedian = []
+    durationHoverPerUserMean = []
+    durationHoverPerUserMedian = []
 
-numberPopups = 0
-numberPopupsPerUser = []
-numberPopupsSafe = 0
-numberPopupsSafePerUser = []
-numberPopupsUnknown = 0
-numberPopupsUnknownPerUser = []
-numberPopupsWarning = 0
-numberPopupsWarningPerUser = []
+    numberPopups = 0
+    numberPopupsPerUser = []
+    numberPopupsSafe = 0
+    numberPopupsSafePerUser = []
+    numberPopupsUnknown = 0
+    numberPopupsUnknownPerUser = []
+    numberPopupsWarning = 0
+    numberPopupsWarningPerUser = []
 
-numberPopupIconChanged = 0
-numberPopupIconChangedSafe = 0
-numberPopupIconChangedWarning = 0
-numberPopupIconChangedPerUser = []
-numberPopupIconChangedSafePerUser = []
-numberPopupIconChangedWarningPerUser = []
+    numberPopupIconChanged = 0
+    numberPopupIconChangedSafe = 0
+    numberPopupIconChangedWarning = 0
+    numberPopupIconChangedPerUser = []
+    numberPopupIconChangedSafePerUser = []
+    numberPopupIconChangedWarningPerUser = []
 
-numberKnownPages = 0
-numberKnownPagesPerUser = []
+    numberKnownPages = 0
+    numberKnownPagesPerUser = []
 
-actionsAfterIconSafeInsertion = []
-actionsAfterIconUnknownInsertion = []
-actionsAfterIconWarningInsertion = []
-actionsAfterAttentionIconInsertion = []
-actionsAfterAttentionIconCumulated = []
+    actionsAfterIconSafeInsertion = []
+    actionsAfterIconUnknownInsertion = []
+    actionsAfterIconWarningInsertion = []
+    actionsAfterAttentionIconInsertion = []
+    actionsAfterAttentionIconCumulated = []
 
-for participant in participantResultsFilesArray:
-    file = open(folderPath + "/" + participant)
-    file = file.readlines()
+    numberVTTVisits = 0
 
-    generalInformation = getGeneralInformation(file)
-    installationDates += [generalInformation[0][0]]
+    for participant in participantResultsFilesArray:
+        file = open(folderPath + "/" + participant)
+        file = file.readlines()
 
-    activityArray = getActivityArray(file)
-    activityArray = activityArrayReplaceEmptyWithNone(activityArray)
-    activityArray = correctActivityInfo(activityArray)
-    numberActionsPerformed += len(activityArray)
-    numberActionsPerformedPerUser += [len(activityArray)]
+        generalInformation = getGeneralInformation(file)
+        installationDates += [generalInformation[0][0]]
 
-    numberPDInitiates += len(getRequestedActivityType(activityArray, 'PDSiteFunctionalityInitiated'))
-    numberPDInitiatesPerUser += [len(getRequestedActivityType(activityArray, 'PDSiteFunctionalityInitiated'))]
+        activityArray = getActivityArray(file)
+        activityArray = activityArrayReplaceEmptyWithNone(activityArray)
+        activityArray = correctActivityInfo(activityArray)
+        numberActionsPerformed += len(activityArray)
+        numberActionsPerformedPerUser += [len(activityArray)]
 
-    hoverArray, hoverDurationsArray = getHoverDurations(activityArray)
-    numberHovers += len(hoverArray)
-    numberHoversPerUser += [len(hoverArray)]
-    if(not hoverDurationsArray == [None]):
-        durationHoverPerUserMean += [round(statistics.mean(hoverDurationsArray))]
-        durationHoverPerUserMedian += [round(statistics.median(hoverDurationsArray))]
+        numberPDInitiates += len(getRequestedActivityType(activityArray, 'PDSiteFunctionalityInitiated'))
+        numberPDInitiatesPerUser += [len(getRequestedActivityType(activityArray, 'PDSiteFunctionalityInitiated'))]
 
-    getActivitiesPerDomain(activityArray)
-    domainArray = getActivitiesPerDomain(activityArray)
-    tabArray = getActivitiesPerTab(activityArray)
+        hoverArray, hoverDurationsArray = getHoverDurations(activityArray)
+        numberHovers += len(hoverArray)
+        numberHoversPerUser += [len(hoverArray)]
+        if(not hoverDurationsArray == [None]):
+            durationHoverPerUserMean += [round(statistics.mean(hoverDurationsArray))]
+            durationHoverPerUserMedian += [round(statistics.median(hoverDurationsArray))]
 
-    icons = getRequestedActivityType(activityArray, "icon")
-    numberIconsShowed += len(icons)
-    numberIconsShowedPerUser += [len(icons)]
+        getActivitiesPerDomain(activityArray)
+        domainArray = getActivitiesPerDomain(activityArray)
+        tabArray = getActivitiesPerTab(activityArray)
 
-    attentionTests = getIconsAttentionTest(activityArray)
-    numberAttentionTests += len(attentionTests)
-    numberAttentionTestsPerUser += [len(attentionTests)]
-    attentionTestsPerUser += [attentionTests]
-    attentionTestTabs = getAttentionTestTabs(activityArray)
+        icons = getRequestedActivityType(activityArray, "icon")
+        numberIconsShowed += len(icons)
+        numberIconsShowedPerUser += [len(icons)]
 
-    iconsSafe = getIconsPerType(activityArray, "safe")
-    numberSafeIcons += len(iconsSafe)
-    numberSafeIconsPerUser += [len(iconsSafe)]
-    iconsWarning = getIconsPerType(activityArray, "warning")
-    numberWarningIcons += len(iconsWarning)
-    numberWarningIconsPerUser += [len(iconsWarning)]
+        attentionTests = getIconsAttentionTest(activityArray)
+        numberAttentionTests += len(attentionTests)
+        numberAttentionTestsPerUser += [len(attentionTests)]
+        attentionTestsPerUser += [attentionTests]
+        attentionTestTabs = getAttentionTestTabs(activityArray)
 
-    popups = getRequestedActivityType(activityArray, "popup")
-    numberPopups += len(popups)
-    numberPopupsPerUser += [len(popups)]
-    numberPopupsSafe += len(getPopupsPerType("safe"))
-    numberPopupsSafePerUser += [getPopupsPerType("safe")]
-    numberPopupsUnknown += len(getPopupsPerType("unknown"))
-    numberPopupsUnknown += len(getPopupsPerType("none"))
-    numberPopupsUnknownPerUser += [getPopupsPerType("unknown") + getPopupsPerType("none")]
-    numberPopupsWarning += len(getPopupsPerType("warning"))
-    numberPopupsWarningPerUser += [getPopupsPerType("warning")]
+        iconsSafe = getIconsPerType(activityArray, "safe")
+        numberSafeIcons += len(iconsSafe)
+        numberSafeIconsPerUser += [len(iconsSafe)]
+        iconsWarning = getIconsPerType(activityArray, "warning")
+        numberWarningIcons += len(iconsWarning)
+        numberWarningIconsPerUser += [len(iconsWarning)]
 
-    numberPopupIconChanged += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
-    + len(getRequestedActivityType(activityArray, 'Popup icon set red'))
-    numberPopupIconChangedPerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set green'))
-    + len(getRequestedActivityType(activityArray, 'Popup icon set red'))]
-    numberPopupIconChangedSafe += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
-    numberPopupIconChangedWarning += len(getRequestedActivityType(activityArray, 'Popup icon set red'))
-    numberPopupIconChangedSafePerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set green'))]
-    numberPopupIconChangedWarningPerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set red'))]
-    
+        popups = getRequestedActivityType(activityArray, "popup")
+        numberPopups += len(popups)
+        numberPopupsPerUser += [len(popups)]
+        numberPopupsSafe += len(getPopupsPerType("safe"))
+        numberPopupsSafePerUser += [getPopupsPerType("safe")]
+        numberPopupsUnknown += len(getPopupsPerType("unknown"))
+        numberPopupsUnknown += len(getPopupsPerType("none"))
+        numberPopupsUnknownPerUser += [getPopupsPerType("unknown") + getPopupsPerType("none")]
+        numberPopupsWarning += len(getPopupsPerType("warning"))
+        numberPopupsWarningPerUser += [getPopupsPerType("warning")]
 
-    knownPagesArray = getKnownPagesArray(file)
-    numberKnownPages += len(knownPagesArray)
-    numberKnownPagesPerUser += [len(knownPagesArray)]
+        numberPopupIconChanged += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
+        + len(getRequestedActivityType(activityArray, 'Popup icon set red'))
+        numberPopupIconChangedPerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set green'))
+        + len(getRequestedActivityType(activityArray, 'Popup icon set red'))]
+        numberPopupIconChangedSafe += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
+        numberPopupIconChangedWarning += len(getRequestedActivityType(activityArray, 'Popup icon set red'))
+        numberPopupIconChangedSafePerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set green'))]
+        numberPopupIconChangedWarningPerUser += [len(getRequestedActivityType(activityArray, 'Popup icon set red'))]
+        
 
-    actionsAfterIconSafeInsertion += [whatWasDoneAfterIconInsertion(tabArray, "safe")]
-    actionsAfterIconUnknownInsertion += [whatWasDoneAfterIconInsertion(tabArray, "unknown")]
-    actionsAfterIconWarningInsertion += [whatWasDoneAfterIconInsertion(tabArray, "warning")]
-    actionsAfterAttentionIconInsertion += [whatWasDoneAfterIconInsertion(attentionTestTabs, "safe")]
+        knownPagesArray = getKnownPagesArray(file)
+        numberKnownPages += len(knownPagesArray)
+        numberKnownPagesPerUser += [len(knownPagesArray)]
+
+        actionsAfterIconSafeInsertion += [whatWasDoneAfterIconInsertion(tabArray, "safe")]
+        actionsAfterIconUnknownInsertion += [whatWasDoneAfterIconInsertion(tabArray, "unknown")]
+        actionsAfterIconWarningInsertion += [whatWasDoneAfterIconInsertion(tabArray, "warning")]
+        actionsAfterAttentionIconInsertion += [whatWasDoneAfterIconInsertion(attentionTestTabs, "safe")]
+
+        numberVTTVisits += getVTTPageInits(activityArray)
 
 
-installationDates = sorted(installationDates)
-installationDateFirst = str(datetime.fromtimestamp(int(installationDates[0]/1000)))
-installationDateLast = str(datetime.fromtimestamp(int(installationDates[-1]/1000)))
+    installationDates = sorted(installationDates)
+    installationDateFirst = str(datetime.fromtimestamp(int(installationDates[0]/1000)))
+    installationDateLast = str(datetime.fromtimestamp(int(installationDates[-1]/1000)))
 
-numberActionsPerformedPerUserMean = numberActionsPerformed / numberParticipants
-numberActionsPerformedPerUserMedian = statistics.median(numberActionsPerformedPerUser)
+    numberActionsPerformedPerUserMean = numberActionsPerformed / numberParticipants
+    numberActionsPerformedPerUserMedian = statistics.median(numberActionsPerformedPerUser)
 
-numberPDInitiatesMean = numberPDInitiates / numberParticipants
-numberPDInitiatesMedian = statistics.median(numberPDInitiatesPerUser)
+    numberPDInitiatesMean = numberPDInitiates / numberParticipants
+    numberPDInitiatesMedian = statistics.median(numberPDInitiatesPerUser)
 
-numberIconsMean = numberIconsShowed / numberParticipants
-numberIconsMedian = statistics.median(numberIconsShowedPerUser)
-numberIconsPer1000PageViews = round((numberIconsShowed / numberPDInitiates) * 1000, 2)
+    numberIconsMean = numberIconsShowed / numberParticipants
+    numberIconsMedian = statistics.median(numberIconsShowedPerUser)
+    numberIconsPer1000PageViews = round((numberIconsShowed / numberPDInitiates) * 1000, 2)
 
-numberSafeIconsMean = numberSafeIcons / numberParticipants
-numberSafeIconsMedian = statistics.median(numberSafeIconsPerUser)
-numberWarningIconsMean = numberWarningIcons / numberParticipants
-numberWarningIconsMedian = statistics.median(numberWarningIconsPerUser)
+    numberSafeIconsMean = numberSafeIcons / numberParticipants
+    numberSafeIconsMedian = statistics.median(numberSafeIconsPerUser)
+    numberWarningIconsMean = numberWarningIcons / numberParticipants
+    numberWarningIconsMedian = statistics.median(numberWarningIconsPerUser)
 
-numberHoversMean = numberHovers / numberParticipants
-numberHoversMedian = statistics.median(numberHoversPerUser)
-#durationHoverMean = round(statistics.mean(durationHoverPerUserMean))
-#durationHoverMedian = round(statistics.median(durationHoverPerUserMedian))
+    numberHoversMean = numberHovers / numberParticipants
+    numberHoversMedian = statistics.median(numberHoversPerUser)
+    #durationHoverMean = round(statistics.mean(durationHoverPerUserMean))
+    #durationHoverMedian = round(statistics.median(durationHoverPerUserMedian))
 
-numberPopupsMean = numberPopups / numberParticipants
-numberPopupsMedian = statistics.median(numberPopupsPerUser)
+    numberPopupsMean = numberPopups / numberParticipants
+    numberPopupsMedian = statistics.median(numberPopupsPerUser)
 
-numberKnownPagesMean = numberKnownPages / numberParticipants
-numberKnownPagesMedian = statistics.median(numberKnownPagesPerUser)
+    numberKnownPagesMean = numberKnownPages / numberParticipants
+    numberKnownPagesMedian = statistics.median(numberKnownPagesPerUser)
 
-actionsAfterAttentionIconCumulated = getCumulatedInfos(actionsAfterAttentionIconInsertion, 0)
-actionsAfterAttentionIconFinalActionCumulated = getCumulatedInfos(actionsAfterAttentionIconInsertion, -1)
-actionsAfterSafeIconCumulated = getCumulatedInfos(actionsAfterIconSafeInsertion, 0)
-actionsAfterSafeIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconSafeInsertion, -1)
-actionsAfterWarningIconCumulated = getCumulatedInfos(actionsAfterIconWarningInsertion, 0)
-actionsAfterWarningIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconWarningInsertion, -1)
-actionsAfterUnknownIconCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, 0)
-actionsAfterUnknownIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, -1)
+    actionsAfterAttentionIconCumulated = getCumulatedInfos(actionsAfterAttentionIconInsertion, 0)
+    actionsAfterAttentionIconFinalActionCumulated = getCumulatedInfos(actionsAfterAttentionIconInsertion, -1)
+    actionsAfterSafeIconCumulated = getCumulatedInfos(actionsAfterIconSafeInsertion, 0)
+    actionsAfterSafeIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconSafeInsertion, -1)
+    actionsAfterWarningIconCumulated = getCumulatedInfos(actionsAfterIconWarningInsertion, 0)
+    actionsAfterWarningIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconWarningInsertion, -1)
+    actionsAfterUnknownIconCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, 0)
+    actionsAfterUnknownIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, -1)
 
-print("Ende")
+
+    time_end = time.time()
+    print("Time elapsed: " + str(round(time_end - time_start)) + "s")
+    print("Ende")
+
+
+############################################## PREPROCESSING ############################################
+allFiles = []
+
+def getFilesForParticipant():
+    for (dirpath, dirnames, filenames) in walk(folderPathRAW):
+        allFiles.extend(filenames)
+    while(not allFiles == []):
+        processFiles = []
+        processFiles.append(allFiles[0])
+        id = allFiles[0].split("_")[1]
+        allFiles.pop(0)
+        #Find all corresponding files
+        lookupCopy = copy.deepcopy(allFiles)
+        for file in lookupCopy:
+            if(file.split("_")[1] == id):
+                processFiles.append(file)
+                allFiles.pop(0)
+        #Combine all files for one user
+        if(len(processFiles) == 1):
+            source = folderPathRAW + "/" + processFiles[0]
+            destination = folderPath + "/" + processFiles[0]
+            shutil.copyfile(source, destination)
+        else:
+            indexFile = open(folderPathRAW + "/" + processFiles[0])
+            indexFile = indexFile.readlines()
+
+            activityArray = getActivityArray(indexFile)
+            timestampArray = []
+            knownPages = getKnownPagesArray(indexFile)
+            knownPagesSingle = []
+            for page in knownPages:
+                knownPagesSingle += [page[0]]
+            for line in activityArray:
+                timestampArray += [line[0]]
+
+            file = ""
+            #check if there are new entries
+            for file in processFiles[1:]:
+                print("Accessed file " + file)
+
+                file = open(folderPathRAW + "/" + file)
+                file = file.readlines()
+
+                if(not file[1] == indexFile[1]):
+                    print("Error: Init datum wrong!!!")
+
+                activityArrayNew = getActivityArray(file)
+                for lineNew in activityArrayNew:
+                    if(not (lineNew[0] in timestampArray)):
+                        activityArray.append(lineNew)
+                        timestampArray += [lineNew[0]]
+                
+                knownPagesNew = getKnownPagesArray(file)
+                for pageNew in knownPagesNew:
+                    if(not(pageNew[0] in knownPagesSingle)):
+                        knownPages += [pageNew]
+                        knownPagesSingle += [pageNew[0]]
+
+            #build new activity Array and assign IDs
+            activityArray = sorted(activityArray)
+            for idx, x in enumerate(activityArray):
+                activityArray[idx] = [x[0], idx, x[2], x[3], x[4], x[5], x[6]]
+            #Build new file
+            newFileString = ""
+            for line in range(9):
+                newFileString += file[line]
+            for x in activityArray:
+                newFileString += str(x[0]) + "," + str(x[1]) + "," + x[2] + "," + x[3] + "," + x[4] + "," + x[5] + "," + x[6] + "\n"
+
+            #Append information and known pages
+            newFileString += "---End of injections---\n\n\nCurrently known pages:\n"
+            newFileString += str(len(knownPages)) +  "\n"
+            for page in knownPages:
+                newFileString += page[0] + "," + page[1] + "," + page[2] + "," + str(page[3]) + "\n"
+            
+            #write to file
+            with open(folderPath + "/" + processFiles[-1], 'w') as f:
+                f.write(newFileString)
+
+############################################### MAIN ROUTINE ############################################
+################################# (Start Processing and evaluation) #####################################
+getFilesForParticipant()
+
+time_end = time.time()
+print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
+
+main()
