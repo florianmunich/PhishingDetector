@@ -11,7 +11,6 @@ import time
 import shutil
 import copy
 
-time_start = time.time()
 folderPathRAW = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults/RAW"
 folderPath = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults"#Enter folder path of files here
 
@@ -153,7 +152,7 @@ def getRequestedActivityType(activityArray, type):
             typeArray += [entry]
     return typeArray
 
-def getPopupsPerType(type):
+def getPopupsPerType(activityArray, type):
     popupTypeArray = []
     popups = getRequestedActivityType(activityArray, "popup")
     for entry in popups:
@@ -324,6 +323,21 @@ def getCumulatedInfos(actionsAfterTypeArray, index):
                         cumulatedArray[idx][1] += 1
     return cumulatedArray
 
+def getDowntime(installationDate, lastUploadDate, activityArray):
+    #Installationdate is factor 1000 time.time()
+    maxTimePossible = time.time()*1000 - installationDate #possible time in seconds
+    timeDown = 0
+    for idx, entry in enumerate(activityArray):
+        if(entry[2] == "PDactivationStatus set to false" or entry[2] == "PDShareData set to false"):
+            dateDown = entry[0]
+            for idy, entry in enumerate(activityArray[idx:]):
+                if(entry[2] == "PDactivationStatus set to true" or entry[2] == "PDShareData set to true"):
+                    dateUp = entry[0]
+                    timeDown += (dateUp - dateDown)
+    #timeDown += (time.time()*1000 - lastUploadDate)
+    print(timeDown / maxTimePossible)
+
+    i = 0
 
 def main():
     installationDates = []
@@ -380,6 +394,9 @@ def main():
 
     numberVTTVisits = 0
 
+    downtimes = []
+    meanDowntime = 0
+
     for participant in participantResultsFilesArray:
         file = open(folderPath + "/" + participant)
         file = file.readlines()
@@ -427,13 +444,13 @@ def main():
         popups = getRequestedActivityType(activityArray, "popup")
         numberPopups += len(popups)
         numberPopupsPerUser += [len(popups)]
-        numberPopupsSafe += len(getPopupsPerType("safe"))
-        numberPopupsSafePerUser += [getPopupsPerType("safe")]
-        numberPopupsUnknown += len(getPopupsPerType("unknown"))
-        numberPopupsUnknown += len(getPopupsPerType("none"))
-        numberPopupsUnknownPerUser += [getPopupsPerType("unknown") + getPopupsPerType("none")]
-        numberPopupsWarning += len(getPopupsPerType("warning"))
-        numberPopupsWarningPerUser += [getPopupsPerType("warning")]
+        numberPopupsSafe += len(getPopupsPerType(activityArray, "safe"))
+        numberPopupsSafePerUser += [getPopupsPerType(activityArray, "safe")]
+        numberPopupsUnknown += len(getPopupsPerType(activityArray, "unknown"))
+        numberPopupsUnknown += len(getPopupsPerType(activityArray, "none"))
+        numberPopupsUnknownPerUser += [getPopupsPerType(activityArray, "unknown") + getPopupsPerType(activityArray, "none")]
+        numberPopupsWarning += len(getPopupsPerType(activityArray, "warning"))
+        numberPopupsWarningPerUser += [getPopupsPerType(activityArray, "warning")]
 
         numberPopupIconChanged += len(getRequestedActivityType(activityArray, 'Popup icon set green'))
         + len(getRequestedActivityType(activityArray, 'Popup icon set red'))
@@ -455,6 +472,8 @@ def main():
         actionsAfterAttentionIconInsertion += [whatWasDoneAfterIconInsertion(attentionTestTabs, "safe")]
 
         numberVTTVisits += getVTTPageInits(activityArray)
+
+        downtimes += [getDowntime(generalInformation[0][0], generalInformation[4][0], activityArray)]
 
 
     installationDates = sorted(installationDates)
@@ -498,16 +517,18 @@ def main():
 
 
     time_end = time.time()
-    print("Time elapsed: " + str(round(time_end - time_start)) + "s")
+    print("Time elapsed for analyzing: " + str(round(time_end - time_start)) + "s")
     print("Ende")
 
 
 ############################################## PREPROCESSING ############################################
-allFiles = []
 
-def getFilesForParticipant():
+
+def preprocessing():
+    allFiles = []
     for (dirpath, dirnames, filenames) in walk(folderPathRAW):
         allFiles.extend(filenames)
+    allFiles.sort(reverse=True)
     while(not allFiles == []):
         processFiles = []
         processFiles.append(allFiles[0])
@@ -578,14 +599,16 @@ def getFilesForParticipant():
                 newFileString += page[0] + "," + page[1] + "," + page[2] + "," + str(page[3]) + "\n"
             
             #write to file
-            with open(folderPath + "/" + processFiles[-1], 'w') as f:
+            with open(folderPath + "/" + processFiles[0], 'w') as f:
                 f.write(newFileString)
+    time_end = time.time()
+    print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
 
 ############################################### MAIN ROUTINE ############################################
 ################################# (Start Processing and evaluation) #####################################
-getFilesForParticipant()
 
-time_end = time.time()
-print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
+time_start = time.time()
+#preprocessing()
 
+time_start = time.time()
 main()
