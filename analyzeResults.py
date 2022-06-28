@@ -10,6 +10,7 @@ import statistics
 import time
 import shutil
 import copy
+import os
 
 folderPathRAW = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults/RAW"
 folderPath = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetectorResults"#Enter folder path of files here
@@ -329,15 +330,17 @@ def getDowntime(installationDate, lastUploadDate, activityArray):
     timeDown = 0
     for idx, entry in enumerate(activityArray):
         if(entry[2] == "PDactivationStatus set to false" or entry[2] == "PDShareData set to false"):
+            reason = entry[2]
             dateDown = entry[0]
-            for idy, entry in enumerate(activityArray[idx:]):
-                if(entry[2] == "PDactivationStatus set to true" or entry[2] == "PDShareData set to true"):
+            for idy, entry in enumerate(activityArray[idx+1:]):
+                if((reason == "PDShareData set to false" and entry[2] == "PDactivationStatus set to false") or entry[2] == "PDactivationStatus set to true" or entry[2] == "PDShareData set to true" or reason == "PDactivationStatus set to false"):
                     dateUp = entry[0]
                     timeDown += (dateUp - dateDown)
-    #timeDown += (time.time()*1000 - lastUploadDate)
-    print(timeDown / maxTimePossible)
-
-    i = 0
+                    break
+    timeDown += (time.time()*1000 - lastUploadDate)
+    if(timeDown / maxTimePossible > 1 or timeDown < 0.001):#This is e.g. for Google's testing when they set the date into the future
+        timeDown = 1
+    return timeDown
 
 def main():
     installationDates = []
@@ -395,9 +398,11 @@ def main():
     numberVTTVisits = 0
 
     downtimes = []
+    downtimesWithProlificID = []
+    downtimesPercentages = []
     meanDowntime = 0
 
-    for participant in participantResultsFilesArray:
+    for idx, participant in enumerate(participantResultsFilesArray):
         file = open(folderPath + "/" + participant)
         file = file.readlines()
 
@@ -473,7 +478,10 @@ def main():
 
         numberVTTVisits += getVTTPageInits(activityArray)
 
-        downtimes += [getDowntime(generalInformation[0][0], generalInformation[4][0], activityArray)]
+        downtimes += [getDowntime(generalInformation[0][0], activityArray[-1][0], activityArray)]
+        downtimesPercentages += [downtimes[idx] / (time.time()*1000 - generalInformation[0][0])]
+        downtimesWithProlificID += [[participant.split("_")[2], downtimesPercentages[idx]]]
+
 
 
     installationDates = sorted(installationDates)
@@ -497,8 +505,8 @@ def main():
 
     numberHoversMean = numberHovers / numberParticipants
     numberHoversMedian = statistics.median(numberHoversPerUser)
-    #durationHoverMean = round(statistics.mean(durationHoverPerUserMean))
-    #durationHoverMedian = round(statistics.median(durationHoverPerUserMedian))
+    durationHoverMean = round(statistics.mean(durationHoverPerUserMean))
+    durationHoverMedian = round(statistics.median(durationHoverPerUserMedian))
 
     numberPopupsMean = numberPopups / numberParticipants
     numberPopupsMedian = statistics.median(numberPopupsPerUser)
@@ -515,6 +523,10 @@ def main():
     actionsAfterUnknownIconCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, 0)
     actionsAfterUnknownIconFinalActionCumulated = getCumulatedInfos(actionsAfterIconUnknownInsertion, -1)
 
+    downtimesWithProlificID = sorted(downtimesWithProlificID)
+    numberUpMoreThan60Percent = np.asarray(downtimesPercentages)
+    numberUpMoreThan60Percent = (numberUpMoreThan60Percent < 0.4)
+    numberUpMoreThan60Percent = numberUpMoreThan60Percent.sum()
 
     time_end = time.time()
     print("Time elapsed for analyzing: " + str(round(time_end - time_start)) + "s")
@@ -524,7 +536,7 @@ def main():
 ############################################## PREPROCESSING ############################################
 
 
-def preprocessing():
+def preprocessingCombineFiles():
     allFiles = []
     for (dirpath, dirnames, filenames) in walk(folderPathRAW):
         allFiles.extend(filenames)
@@ -601,14 +613,43 @@ def preprocessing():
             #write to file
             with open(folderPath + "/" + processFiles[0], 'w') as f:
                 f.write(newFileString)
-    time_end = time.time()
-    print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
+
+
+def preprocessingDeleteSmallFiles():
+    deletedFiles = 0
+    ## Delete Files with < 20 entries
+    allFiles = []
+    for (dirpath, dirnames, filenames) in walk(folderPath):
+        allFiles.extend(filenames)
+        break
+    for fileName in allFiles:
+        file = open(folderPath + "/" + fileName)
+        file = file.readlines()
+        activityArray = getActivityArray(file)
+        if(len(activityArray) < 20):
+            if os.path.exists(folderPath + "/" + fileName):
+                os.remove(folderPath + "/" + fileName)
+                deletedFiles += 1
+                print("filename" + " deleted due to less than 20 entries")
+    print(str(deletedFiles) + " files deleted due to less than 20 entries")
+   
 
 ############################################### MAIN ROUTINE ############################################
 ################################# (Start Processing and evaluation) #####################################
 
-time_start = time.time()
+
+
+def preprocessing():
+    time_start = time.time()
+
+    #preprocessingCombineFiles()
+    #preprocessingDeleteSmallFiles()
+
+    time_end = time.time()
+    print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
+
 #preprocessing()
 
 time_start = time.time()
+
 main()
