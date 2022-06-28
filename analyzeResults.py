@@ -221,6 +221,21 @@ def getVTTPageInits(activityArray):
             numberVisits += 1
     return numberVisits
 
+def getVTTPageInitsNewTab(activityArray):
+    numberVisits = 0
+    knownTabs = [0,0,0]
+    i = 0
+    for entry in activityArray:
+        if(entry[6] == "www.virustotal.com"):
+            if(entry[5] in knownTabs):
+                continue
+            else:
+                knownTabs[i] = entry[5]
+                i += 1
+                i = i % 3
+            numberVisits += 1
+    return numberVisits
+
 
 def getActivitiesPerDomain(activityArray):
     domainArray = []
@@ -396,6 +411,8 @@ def main():
     actionsAfterAttentionIconCumulated = []
 
     numberVTTVisits = 0
+    numberVTTVisitsNewTab = 0
+    numberVTTVisitsNewTabPerUser = []
 
     downtimes = []
     downtimesWithProlificID = []
@@ -477,6 +494,8 @@ def main():
         actionsAfterAttentionIconInsertion += [whatWasDoneAfterIconInsertion(attentionTestTabs, "safe")]
 
         numberVTTVisits += getVTTPageInits(activityArray)
+        numberVTTVisitsNewTabPerUser += [getVTTPageInitsNewTab(activityArray)]
+        numberVTTVisitsNewTab += numberVTTVisitsNewTabPerUser[idx]
 
         downtimes += [getDowntime(generalInformation[0][0], activityArray[-1][0], activityArray)]
         downtimesPercentages += [downtimes[idx] / (time.time()*1000 - generalInformation[0][0])]
@@ -510,6 +529,9 @@ def main():
 
     numberPopupsMean = numberPopups / numberParticipants
     numberPopupsMedian = statistics.median(numberPopupsPerUser)
+
+    numberVTTVisitsNewTabMean = numberVTTVisitsNewTab / numberParticipants
+    numberVTTVisitsNewTabMedian = statistics.median(numberVTTVisitsNewTab)
 
     numberKnownPagesMean = numberKnownPages / numberParticipants
     numberKnownPagesMedian = statistics.median(numberKnownPagesPerUser)
