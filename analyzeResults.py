@@ -1,6 +1,6 @@
 #Analyze PDStats
 from gettext import install
-from os import walk
+from os import getlogin, walk
 from datetime import datetime
 
 import numpy as np
@@ -18,23 +18,6 @@ folderPath = "C:/Users/flori/OneDrive/Dokumente/LMU/Masterarbeit/PhishingDetecto
 
 ########################################### FINAL PROCESSING ############################################
 
-
-
-participantResultsFilesArray = []
-for (dirpath, dirnames, filenames) in walk(folderPath):
-    participantResultsFilesArray.extend(filenames)
-    break
-
-""" #Should be done manually
-def correctStatsFiles():
-    for idx, file in enumerate(participantResultsFilesArray):
-        for i in range(len(participantResultsFilesArray) - idx - 1):
-            a = 0
-            if(file.split('_')[1] == participantResultsFilesArray[idx + i + 1].split('_')[1]):
-                print("Hello")
-    print("donothing")
-
-correctStatsFiles() """
 
 #return general information [Plugin initialized, lastSafe, lastUnknown, lastWarning, lastUpload]
 #each with [timestamp, humanReadable Time]
@@ -357,7 +340,21 @@ def getDowntime(installationDate, lastUploadDate, activityArray):
         timeDown = 1
     return timeDown
 
+def getLoginPages(activityArray):
+    pageArray = []
+    for entry in activityArray:
+        if(entry[2] == 'icon'):
+            if(not(entry[6] == 'none') and not(entry[6] == 'notKnown')):
+                if(not( entry[6] in pageArray) ):
+                    pageArray += [entry[6]]
+    return pageArray
+
+
 def main():
+    participantResultsFilesArray = []
+    for (dirpath, dirnames, filenames) in walk(folderPath):
+        participantResultsFilesArray.extend(filenames)
+        break
     installationDates = []
 
     numberParticipants = len(participantResultsFilesArray)
@@ -417,7 +414,9 @@ def main():
     downtimes = []
     downtimesWithProlificID = []
     downtimesPercentages = []
-    meanDowntime = 0
+    
+
+    numberLoginPagesPerUser = []
 
     for idx, participant in enumerate(participantResultsFilesArray):
         file = open(folderPath + "/" + participant)
@@ -434,6 +433,8 @@ def main():
 
         numberPDInitiates += len(getRequestedActivityType(activityArray, 'PDSiteFunctionalityInitiated'))
         numberPDInitiatesPerUser += [len(getRequestedActivityType(activityArray, 'PDSiteFunctionalityInitiated'))]
+
+        numberLoginPagesPerUser += [len(getLoginPages(activityArray))]
 
         hoverArray, hoverDurationsArray = getHoverDurations(activityArray)
         numberHovers += len(hoverArray)
@@ -513,6 +514,11 @@ def main():
     numberPDInitiatesMean = numberPDInitiates / numberParticipants
     numberPDInitiatesMedian = statistics.median(numberPDInitiatesPerUser)
 
+    numberLoginPagesMean = sum(numberLoginPagesPerUser) / numberParticipants
+    numberLoginPagesMedian = statistics.median(numberLoginPagesPerUser)
+    numberLoginPagesMeanNotNull = sum(numberLoginPagesPerUser) / ((np.asarray(numberLoginPagesPerUser) > 0 ).sum())
+    numberLoginPagesMedianNotNull = statistics.median([i for i in numberLoginPagesPerUser if i != 0])
+
     numberIconsMean = numberIconsShowed / numberParticipants
     numberIconsMedian = statistics.median(numberIconsShowedPerUser)
     numberIconsPer1000PageViews = round((numberIconsShowed / numberPDInitiates) * 1000, 2)
@@ -531,7 +537,7 @@ def main():
     numberPopupsMedian = statistics.median(numberPopupsPerUser)
 
     numberVTTVisitsNewTabMean = numberVTTVisitsNewTab / numberParticipants
-    numberVTTVisitsNewTabMedian = statistics.median(numberVTTVisitsNewTab)
+    numberVTTVisitsNewTabMedian = statistics.median(numberVTTVisitsNewTabPerUser)
 
     numberKnownPagesMean = numberKnownPages / numberParticipants
     numberKnownPagesMedian = statistics.median(numberKnownPagesPerUser)
@@ -549,6 +555,7 @@ def main():
     numberUpMoreThan60Percent = np.asarray(downtimesPercentages)
     numberUpMoreThan60Percent = (numberUpMoreThan60Percent < 0.4)
     numberUpMoreThan60Percent = numberUpMoreThan60Percent.sum()
+    meanDowntime = sum(downtimesPercentages) / numberParticipants
 
     time_end = time.time()
     print("Time elapsed for analyzing: " + str(round(time_end - time_start)) + "s")
@@ -636,7 +643,6 @@ def preprocessingCombineFiles():
             with open(folderPath + "/" + processFiles[0], 'w') as f:
                 f.write(newFileString)
 
-
 def preprocessingDeleteSmallFiles():
     deletedFiles = 0
     ## Delete Files with < 20 entries
@@ -652,25 +658,25 @@ def preprocessingDeleteSmallFiles():
             if os.path.exists(folderPath + "/" + fileName):
                 os.remove(folderPath + "/" + fileName)
                 deletedFiles += 1
-                print("filename" + " deleted due to less than 20 entries")
+                print(filename + " deleted due to less than 20 entries")
     print(str(deletedFiles) + " files deleted due to less than 20 entries")
    
+def preprocessingMain():
+    time_start = time.time()
 
+    #preprocessingCombineFiles()
+    preprocessingDeleteSmallFiles()
+
+    time_end = time.time()
+    print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
 ############################################### MAIN ROUTINE ############################################
 ################################# (Start Processing and evaluation) #####################################
 
 
 
-def preprocessing():
-    time_start = time.time()
 
-    #preprocessingCombineFiles()
-    #preprocessingDeleteSmallFiles()
 
-    time_end = time.time()
-    print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
-
-#preprocessing()
+preprocessingMain()
 
 time_start = time.time()
 
