@@ -658,25 +658,43 @@ def preprocessingDeleteSmallFiles():
             if os.path.exists(folderPath + "/" + fileName):
                 os.remove(folderPath + "/" + fileName)
                 deletedFiles += 1
-                print(filename + " deleted due to less than 20 entries")
+                print(fileName + " deleted due to less than 20 entries")
     print(str(deletedFiles) + " files deleted due to less than 20 entries")
    
+def preprocessingDeleteLongDowntime():
+    deletedFiles = 0
+    allFiles = []
+    for (dirpath, dirnames, filenames) in walk(folderPath):
+        allFiles.extend(filenames)
+        break
+    for fileName in allFiles:
+        file = open(folderPath + "/" + fileName)
+        file = file.readlines()
+        activityArray = getActivityArray(file)
+        generalInformation = getGeneralInformation(file)
+        downTime = getDowntime(generalInformation[0][0], activityArray[-1][0], activityArray) / (time.time()*1000 - generalInformation[0][0])
+        if(downTime > 0.9):
+            if os.path.exists(folderPath + "/" + fileName):
+                #os.remove(folderPath + "/" + fileName)
+                deletedFiles += 1
+                print(fileName + " deleted due to less 10 percent online")
+
 def preprocessingMain():
     time_start = time.time()
 
-    #preprocessingCombineFiles()
-    preprocessingDeleteSmallFiles()
+    preprocessingCombineFiles()
+    #preprocessingDeleteSmallFiles()
+    preprocessingDeleteLongDowntime()
 
     time_end = time.time()
     print("Time elapsed for preprocessing: " + str(round(time_end - time_start)) + "s")
+
+
 ############################################### MAIN ROUTINE ############################################
 ################################# (Start Processing and evaluation) #####################################
 
 
-
-
-
-preprocessingMain()
+#preprocessingMain()
 
 time_start = time.time()
 
