@@ -67,8 +67,11 @@ async function handleSettingClick(event) {
         //Color the options in grey if they are disabled
         BGButton.firstChild.firstChild.classList.toggle("notApplicable");
         BEButton.firstChild.firstChild.classList.toggle("notApplicable");
-        
-        chrome.storage.local.set({ PDActivationWarningToBeShown: "true" }, function () {});
+
+        chrome.storage.local.set(
+            { PDActivationWarningToBeShown: "true" },
+            function () {}
+        );
 
         writeStats("PDactivationStatus set to " + currentSettingStatus);
     } else {
@@ -83,7 +86,10 @@ async function handleSettingClick(event) {
                     );
                     writeStats("PDsetBGColor set to " + currentSettingStatus);
                 } else if (setting == "PDShareData") {
-                    chrome.storage.local.set({ PDActivationWarningToBeShown: true }, function () {});
+                    chrome.storage.local.set(
+                        { PDActivationWarningToBeShown: true },
+                        function () {}
+                    );
                     writeStats("PDShareData set to false"); //If set to true, this will automatically be blocked
                     handleStatsSharing(currentSettingStatus);
                 }
@@ -207,17 +213,6 @@ async function init() {
     );
     chrome.storage.local.get("PDProlificID", function (items) {
         prolificID.innerHTML = "ID: " + items["PDProlificID"];
-/*         var resetProlific = prolificID.appendChild(
-            createElementWithClass("button", "resetProlificID")
-        );
-        resetProlific.innerHTML = "Reset ID";
-        resetProlific.addEventListener("click", resetProlificFun);
-        async function resetProlificFun() {
-            chrome.storage.local.set({ PDProlificID: "" }, function () {});
-            window.alert(texts.texts.prolific.reset[language]);
-            await sleep(5); //Allowing to set the ID before reloading
-            document.location.reload();
-        } */
     });
 
     iconsRight = identifier.appendChild(
@@ -806,13 +801,6 @@ texts = {
                     "English: PhishingDetector uses blacklists and whitelists for known sites. If a website is not on these lists, a virus scan is retrieved from virustotal.com.",
                 german: "PhishingDetector benutzt Black- sowie Whitelists f&uuml;r bekannte Seiten. Ist eine Webseite nicht auf diesen Listen vorhanden, wird ein Virenscan von virustotal.com abgerufen.",
             },
-        },/* 
-        prolific: {
-            reset: {
-                english:
-                    'WARNING: Entering "none" in the next step will not delete your ID, but reset the visualized value to the default value. If you do not wish to share data, please disable the option "Share Statistics".',
-                german: 'ACHTUNG: Wenn Sie im naechsten Schritt "none" eingeben, wird Ihre ID nicht gelöscht, sondern die Anzeige wird auf den Ursprungswert zurueckgesetzt. Wenn Sie keine Daten teilen moechten, deaktivieren Sie bitte die Option "Statistik teilen".',
-            },
-        }, */
+        }
     },
 };
