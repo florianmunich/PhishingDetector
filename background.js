@@ -68,6 +68,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             path: "/images/colors/logo_green_16.png",
             tabId: sender.tab.id,
         });
+        sendResponse({ none: "" });
         writeStats("Popup icon set green", sender.tab.id, sender.tab.url);
     }
 
@@ -77,6 +78,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             path: "/images/colors/logo_yellow_16.png",
             tabId: sender.tab.id,
         });
+        sendResponse({ none: "" });
         writeStats("Popup icon set yellow", sender.tab.id, sender.tab.url);
     }
 
@@ -91,6 +93,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             color: [255, 0, 0, 255],
             tabId: sender.tab.id,
         });
+        sendResponse({ none: "" });
         writeStats("Popup icon set red", sender.tab.id, sender.tab.url);
     }
 
@@ -201,8 +204,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         })
             .then((response) => console.log(response))
             .catch((err) => console.log(err));
+            sendResponse({ none: "" });
     }
-
     return true;
 });
 
